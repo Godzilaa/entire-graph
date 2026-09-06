@@ -43,6 +43,15 @@ const NPM_DENY = new Set([
   "@chakra-ui/react", "@chakra-ui/icons", "@mui/material", "@mui/icons-material",
   "@emotion/react", "@emotion/styled", "antd", "@mantine/core", "@mantine/hooks",
   "bootstrap", "react-bootstrap", "@radix-ui/react-slot", "styled-components",
+  // test runners / build tooling — imported by *.test/*.bench files, never the
+  // domain library. Left in, a repo's test runner (e.g. vitest) wins "most
+  // common import" and becomes a bogus recipe library.
+  "vitest", "@vitest/ui", "@vitest/coverage-v8", "jest", "ts-jest", "babel-jest",
+  "mocha", "chai", "jasmine", "ava", "sinon", "supertest", "cypress",
+  "playwright", "@playwright/test", "karma", "jsdom", "happy-dom", "enzyme",
+  "ts-node", "tsx", "tsup", "esbuild", "rollup", "nodemon", "@swc/core",
+  "@testing-library/react", "@testing-library/dom", "@testing-library/jest-dom",
+  "@testing-library/user-event",
 ]);
 const JS_SYM_DENY = new Set([
   "useState", "useEffect", "useRef", "useMemo", "useCallback", "useContext",
@@ -97,7 +106,9 @@ const CONFIGS = {
   py: {
     root: (m) => {
       if (!m || m.startsWith(".")) return null;
-      const r = first(m, ".");
+      // Split on "." AND "/": Cython cimports surface as "numpy/arrayobject",
+      // which must collapse to the installable root "numpy", not a pseudo-package.
+      const r = first(m, /[./]/);
       return PY_STDLIB.has(r) ? null : r;
     },
     famPrefix: (root) => root,

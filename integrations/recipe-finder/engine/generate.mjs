@@ -40,6 +40,13 @@ const PKG_DENY = new Set([
   "@chakra-ui/react", "@chakra-ui/icons", "@mui/material", "@mui/icons-material",
   "@emotion/react", "@emotion/styled", "antd", "@mantine/core", "@mantine/hooks",
   "bootstrap", "react-bootstrap", "@radix-ui/react-slot", "styled-components",
+  // test runners / build tooling (see langs.mjs NPM_DENY — keep in sync)
+  "vitest", "@vitest/ui", "@vitest/coverage-v8", "jest", "ts-jest", "babel-jest",
+  "mocha", "chai", "jasmine", "ava", "sinon", "supertest", "cypress",
+  "playwright", "@playwright/test", "karma", "jsdom", "happy-dom", "enzyme",
+  "ts-node", "tsx", "tsup", "esbuild", "rollup", "nodemon", "@swc/core",
+  "@testing-library/react", "@testing-library/dom", "@testing-library/jest-dom",
+  "@testing-library/user-event",
 ]);
 const SYM_DENY = new Set([
   "useState", "useEffect", "useRef", "useMemo", "useCallback", "useContext",
@@ -91,6 +98,16 @@ export const repoName = (url) => url.replace(/\.git$/, "").split("/").pop();
 export const basePkg = (m) =>
   m.startsWith("@") ? m.split("/").slice(0, 2).join("/") : m.split("/")[0];
 export const isSource = (f) => !!f && /\.(ts|tsx|js|jsx|mjs|cjs|vue|svelte)$/.test(f);
+// Test / benchmark / example files import a repo's TEST RUNNER (vitest, jest…)
+// and fixtures, not its domain library — counting them lets a test dependency
+// win "most common import". Exclude them from mining. Language-agnostic so the
+// multi-language engine benefits too (Python test_*.py, *_test.go, specs, …).
+export const isTestPath = (f) =>
+  !!f &&
+  (/(^|\/)(tests?|__tests__|spec|specs|e2e|examples?|benchmarks?|bench|cypress|fixtures?|mocks?|__mocks__)(\/|$)/i.test(f) ||
+    /(\.|_|-)(test|spec|bench|stories|e2e)\.[a-z]+$/i.test(f) ||
+    /(^|\/)(test|conftest)_[^/]*\.py$/i.test(f) ||
+    /(^|\/)[^/]*_test\.(go|py|rb)$/i.test(f));
 
 // ---- discovery -------------------------------------------------------------
 function sizeOK(fullName) {
@@ -104,52 +121,57 @@ function sizeOK(fullName) {
   return true;
 }
 
-export function discoverRepos(goal, pkg, maxRepos = MAX_REPOS) {
+// Discover candidate repos. `pkg` is the primary package hint; `opts.pkgs` and
+// `opts.terms` widen discovery with additional candidate libraries / search
+// phrases (e.g. from the optional LLM resolver). Package code-searches run with
+// NO --language filter so the package name picks the ecosystem (a Python lib
+// like `numpy` finds Python repos); the goal repo-search is TS-first (web bias)
+// then any-language.
+export function discoverRepos(goal, pkg, maxRepos = MAX_REPOS, { pkgs = [], terms = [] } = {}) {
   const picked = [];
   const seen = new Set();
+  const add = (full, url) => {
+    if (!full || !url || seen.has(full)) return;
+    seen.add(full);
+    if (picked.length < maxRepos && sizeOK(full)) picked.push(url);
+  };
+  const pkgList = [...new Set([pkg, ...pkgs].filter(Boolean))];
+  const termList = [...new Set([goal, ...terms].filter(Boolean))];
   try {
-    if (pkg) {
-      // repos that ACTUALLY import the package (grounded)
-      console.error(`  discovering repos that import ${pkg} …`);
-      const out = sh("gh", [
-        "search", "code", pkg, "--language", "typescript",
-        "--limit", String(Math.max(30, maxRepos * 4)), "--json", "repository",
-      ]);
-      for (const it of JSON.parse(out)) {
-        const full = it.repository?.nameWithOwner;
-        const url = it.repository?.url;
-        if (!full || seen.has(full)) continue;
-        seen.add(full);
-        if (picked.length < maxRepos && sizeOK(full)) picked.push(url);
-      }
+    // 1. repos that ACTUALLY import a candidate package (grounded, any language)
+    for (const p of pkgList) {
+      if (picked.length >= maxRepos) break;
+      console.error(`  discovering repos that import ${p} …`);
+      try {
+        const out = sh("gh", [
+          "search", "code", p,
+          "--limit", String(Math.max(20, maxRepos * 4)), "--json", "repository",
+        ]);
+        for (const it of JSON.parse(out)) add(it.repository?.nameWithOwner, it.repository?.url);
+      } catch {}
     }
+    // 2. repos for the goal, TS-first (web-feature bias)
     if (picked.length < maxRepos) {
-      console.error(`  discovering repos for "${goal}" …`);
-      const out = sh("gh", [
-        "search", "repos", goal, "--language", "typescript",
-        "--sort", "stars", "--limit", String(Math.max(12, maxRepos * 3)), "--json", "fullName,url",
-      ]);
-      for (const r of JSON.parse(out)) {
-        if (seen.has(r.fullName)) continue;
-        seen.add(r.fullName);
-        if (picked.length < maxRepos && sizeOK(r.fullName)) picked.push(r.url);
-      }
+      console.error(`  discovering repos for "${goal}" (typescript) …`);
+      try {
+        const out = sh("gh", [
+          "search", "repos", goal, "--language", "typescript",
+          "--sort", "stars", "--limit", String(Math.max(12, maxRepos * 3)), "--json", "fullName,url",
+        ]);
+        for (const r of JSON.parse(out)) add(r.fullName, r.url);
+      } catch {}
     }
-    if (picked.length < maxRepos) {
-      // Any-language fallback — the engine is language-aware (see langs.mjs), so
-      // Python/Java/Go/Ruby/etc. repos are mined too. TS/JS are tried first
-      // (above) so web goals still prefer the JS ecosystem; this widens to
-      // everything else when a goal has few/no JS repos.
-      console.error(`  discovering repos for "${goal}" (any language) …`);
-      const out = sh("gh", [
-        "search", "repos", goal,
-        "--sort", "stars", "--limit", String(Math.max(12, maxRepos * 3)), "--json", "fullName,url",
-      ]);
-      for (const r of JSON.parse(out)) {
-        if (seen.has(r.fullName)) continue;
-        seen.add(r.fullName);
-        if (picked.length < maxRepos && sizeOK(r.fullName)) picked.push(r.url);
-      }
+    // 3. any-language repo search across every term (goal + resolver search terms)
+    for (const term of termList) {
+      if (picked.length >= maxRepos) break;
+      console.error(`  discovering repos for "${term}" (any language) …`);
+      try {
+        const out = sh("gh", [
+          "search", "repos", term,
+          "--sort", "stars", "--limit", String(Math.max(12, maxRepos * 3)), "--json", "fullName,url",
+        ]);
+        for (const r of JSON.parse(out)) add(r.fullName, r.url);
+      } catch {}
     }
   } catch (e) {
     console.warn("  ! discovery failed:", e.message.split("\n")[0]);
@@ -194,7 +216,20 @@ function snippet(repoPath, file, line) {
 
 // ---- main ------------------------------------------------------------------
 export function generate(goal, opts = {}) {
-  const repoUrls = opts.repos?.length ? opts.repos : discoverRepos(goal, opts.package);
+  // A one-word goal is almost always a bare library NAME ("numpy", "tiptap"),
+  // not a feature description. Use it to (a) discover repos that actually import
+  // it — in whatever ecosystem — and (b) prefer it during resolution, so an
+  // incidental shared import (a test runner) can't hijack the recipe.
+  const singleWord = !/\s/.test(goal.trim());
+  // Optional LLM resolver output (opts.candidates / opts.searchTerms) seeds
+  // discovery; a single-word goal is itself a candidate library name. The graph
+  // still decides the final library from what repos actually import.
+  const candidates = Array.isArray(opts.candidates) ? opts.candidates.filter(Boolean) : [];
+  const searchTerms = Array.isArray(opts.searchTerms) ? opts.searchTerms.filter(Boolean) : [];
+  const discoverPkg = opts.package || candidates[0] || (singleWord ? goal.trim() : null);
+  const repoUrls = opts.repos?.length
+    ? opts.repos
+    : discoverRepos(goal, discoverPkg, MAX_REPOS, { pkgs: candidates, terms: searchTerms });
   const repos = repoUrls
     .map((url) => {
       const path = clone(url);
@@ -263,6 +298,7 @@ export function generate(goal, opts = {}) {
   const pkgRecords = new Map(); // root -> backing IMPORTS records, for grading
   for (const r of repoSet) {
     for (const rec of r.imports) {
+      if (isTestPath(rec.evidence?.[0]?.file_path)) continue; // skip test/bench deps
       const root = L.root(importedModule(rec));
       if (!root) continue; // relative import, stdlib, or framework noise
       if (!pkgRepos.has(root)) { pkgRepos.set(root, new Set()); pkgRecords.set(root, []); }
@@ -274,7 +310,20 @@ export function generate(goal, opts = {}) {
     }
   }
   const rankedPkgs = [...pkgRepos.entries()].sort((a, b) => b[1].size - a[1].size);
-  const library = opts.package || rankedPkgs[0]?.[0] || "unknown";
+  // Prefer a discovered package that matches a resolver candidate or a single-word
+  // goal ("numpy" → the `numpy` import), even if some other package is imported in
+  // more repos — otherwise a shared incidental dep (a test runner) outranks the
+  // library the user actually wants. The candidate only wins if it's a REAL import
+  // here, so a wrong LLM guess can't invent a library the repos don't use.
+  const norm2 = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const preferTokens = new Set(
+    [...candidates, ...(singleWord ? [goal] : [])].map(norm2).filter(Boolean)
+  );
+  const matchesPreferred = (root) =>
+    preferTokens.has(norm2(root)) || preferTokens.has(norm2(L.installName(root)));
+  const preferredPkg =
+    !opts.package && preferTokens.size ? rankedPkgs.find(([p]) => matchesPreferred(p)) : null;
+  const library = opts.package || preferredPkg?.[0] || rankedPkgs[0]?.[0] || "unknown";
   // Honest miss: the discovered repos import nothing installable (only stdlib,
   // or plain logic with no shared library). Surface a clean "no recipe".
   if (library === "unknown") {
@@ -324,6 +373,7 @@ export function generate(goal, opts = {}) {
   const symRecords = new Map(); // name -> backing CALLS/CONSTRUCTS records
   for (const r of repoSet) {
     for (const rec of r.calls) {
+      if (isTestPath(rec.evidence?.[0]?.file_path)) continue; // skip test/bench call sites
       if (typeof rec.to_id !== "string" || !rec.to_id.startsWith("external:symbol:")) continue;
       const extPath = rec.to_id.slice("external:symbol:".length); // e.g. @tiptap/react.useEditor
       if (extPath !== library && !extPath.startsWith(famPrefix)) continue; // library family only
@@ -386,6 +436,19 @@ export function generate(goal, opts = {}) {
     keywords: keywordsFromGoal(goal),
     steps,
     analysis,
+    // Transparency: if an LLM proposed the starting candidates, record what it
+    // suggested vs. what the graph actually confirmed. The recipe is still built
+    // from real import/call edges — the LLM only seeded discovery.
+    ...(candidates.length
+      ? {
+          resolver: {
+            model: opts.resolverModel || null,
+            ecosystem: opts.ecosystem || "",
+            suggested: candidates,
+            confirmed: library,
+          },
+        }
+      : {}),
     sources: repoSet.map((r) => r.url),
   };
 }

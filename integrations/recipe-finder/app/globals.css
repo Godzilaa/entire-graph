@@ -593,6 +593,11 @@ body {
 .verify-banner b {
   color: #1f7a47;
 }
+.resolver-note {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.85;
+}
 .verify-banner-warn {
   background: rgba(214, 158, 46, 0.14) !important;
   border: 1px solid rgba(214, 158, 46, 0.34);

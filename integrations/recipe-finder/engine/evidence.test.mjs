@@ -20,6 +20,8 @@ import {
   edgeTier, gradeStep, buildAnalysis, stepCaveat, TIERS,
 } from "./evidence.mjs";
 import { parseSnapshotNdjson, snapshotGraph, graphAvailable } from "./graph.mjs";
+import { isTestPath } from "./generate.mjs";
+import { parseResolverJSON } from "./resolver.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = join(__dirname, "__fixtures__", "partial-analysis");
@@ -127,6 +129,40 @@ test("buildAnalysis: a blind (inventory-only / unparsed) repo => low confidence"
   assert.equal(a.confidence, "low");
   assert.deepEqual(a.blindRepos, ["blind"]);
   assert.ok(a.reasons.some((r) => /blind spot|no resolvable/i.test(r)));
+});
+
+// ---- isTestPath: keep test-runner imports out of recipes --------------------
+test("isTestPath: test/bench/example files are excluded from mining", () => {
+  for (const f of [
+    "bench/argreduce.bench.ts", "test/clockSync.test.ts", "__tests__/a.js",
+    "tests/test_core.py", "pkg/foo_test.go", "examples/demo.tsx", "src/x.spec.ts",
+  ]) assert.equal(isTestPath(f), true, `${f} should be a test path`);
+});
+
+test("isTestPath: real source files are kept", () => {
+  for (const f of ["src/editor.jsx", "src/lib/np.py", "src/index.ts", "app/api/route.ts"])
+    assert.equal(isTestPath(f), false, `${f} should NOT be a test path`);
+});
+
+// ---- LLM resolver JSON parsing (hermetic — no API call) ---------------------
+test("parseResolverJSON: clean JSON yields sanitized candidates", () => {
+  const r = parseResolverJSON(
+    '{"ecosystem":"Python","libraries":["numpy","numpy","scipy"],"searchTerms":["numpy tutorial"]}'
+  );
+  assert.equal(r.ecosystem, "python");
+  assert.deepEqual(r.libraries, ["numpy", "scipy"]); // deduped, trimmed
+  assert.deepEqual(r.searchTerms, ["numpy tutorial"]);
+});
+
+test("parseResolverJSON: tolerates prose/code-fence around the JSON", () => {
+  const r = parseResolverJSON('Sure!\n```json\n{"libraries":["@tiptap/react"]}\n```\nHope that helps');
+  assert.deepEqual(r.libraries, ["@tiptap/react"]);
+});
+
+test("parseResolverJSON: garbage or empty returns null (falls back to graph-only)", () => {
+  assert.equal(parseResolverJSON("not json at all"), null);
+  assert.equal(parseResolverJSON('{"libraries":[],"searchTerms":[]}'), null);
+  assert.equal(parseResolverJSON(""), null);
 });
 
 // ---- golden: real captured snapshot of the partial-analysis fixture ---------

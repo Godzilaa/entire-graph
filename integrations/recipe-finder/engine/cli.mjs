@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { generate, saveRecipe, matchScore } from "./generate.mjs";
+import { resolveCandidates, resolverEnabled } from "./resolver.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -47,6 +48,11 @@ function printRecipe(r) {
   console.log(
     `  mined from ${r.reposMined} repos · ${r.callSites} call sites · runners-up: ${r.runnersUp}`
   );
+  if (r.resolver) {
+    console.log(
+      `  LLM suggested: ${(r.resolver.suggested || []).join(", ") || "—"} → graph confirmed: ${r.resolver.confirmed}`
+    );
+  }
   // Evidence honesty banner — "the graph is evidence, not an oracle."
   const a = r.analysis;
   if (a && !a.complete) {
@@ -97,6 +103,20 @@ if (cmd === "query" || cmd === "recipe") {
     process.exit(1);
   }
   console.error(`\n▶ generating recipe for goal: "${goal}"\n`);
+  // Optional LLM resolver (only in pure-auto mode — the agent's own --package /
+  // --repos always win). Proposes candidate libraries + search terms; the graph
+  // still verifies. No-op unless ANTHROPIC_API_KEY is set.
+  if (!flags.package && !flags.repos?.length && resolverEnabled()) {
+    console.error("  resolving candidate libraries with LLM …");
+    const r = await resolveCandidates(goal);
+    if (r) {
+      flags.candidates = r.libraries;
+      flags.searchTerms = r.searchTerms;
+      flags.ecosystem = r.ecosystem;
+      flags.resolverModel = r.model;
+      console.error(`  LLM suggested: ${(r.libraries || []).join(", ") || "—"} (ecosystem: ${r.ecosystem || "?"})`);
+    }
+  }
   const recipe = generate(goal, flags);
   saveRecipe(recipe);
   if (wantJson) console.log(JSON.stringify(recipe, null, 2));

@@ -144,6 +144,13 @@ const PKG_DENY = [
   "@chakra-ui/react", "@chakra-ui/icons", "@mui/material", "@mui/icons-material",
   "@emotion/react", "@emotion/styled", "antd", "@mantine/core", "@mantine/hooks",
   "bootstrap", "react-bootstrap", "@radix-ui/react-slot", "styled-components",
+  // test runners / build tooling (keep in sync with engine/generate.mjs + langs.mjs)
+  "vitest", "@vitest/ui", "@vitest/coverage-v8", "jest", "ts-jest", "babel-jest",
+  "mocha", "chai", "jasmine", "ava", "sinon", "supertest", "cypress",
+  "playwright", "@playwright/test", "karma", "jsdom", "happy-dom", "enzyme",
+  "ts-node", "tsx", "tsup", "esbuild", "rollup", "nodemon", "@swc/core",
+  "@testing-library/react", "@testing-library/dom", "@testing-library/jest-dom",
+  "@testing-library/user-event",
 ];
 const SYM_DENY = [
   "useState", "useEffect", "useRef", "useMemo", "useCallback", "useContext",

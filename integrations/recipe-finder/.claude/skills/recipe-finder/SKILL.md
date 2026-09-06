@@ -41,6 +41,25 @@ at the resolved `library` and `sources`:
 
 `--package` and `--repos` are optional refinements; the goal alone is enough to start.
 
+### You are the resolver — don't set an API key
+
+**When you (a coding agent) run this skill, YOU are the library resolver.** Don't
+rely on any API key. Read the goal, decide the likely library yourself, and pass
+it — you have more context than a one-shot model call, and it's free and instant:
+
+```bash
+node engine/cli.mjs generate "numpy array math" --package numpy --json
+```
+
+The graph then confirms whether real repos actually import it. This is the
+intended split: you supply judgment, the engine supplies evidence.
+
+The engine *also* has an optional built-in LLM resolver behind `ANTHROPIC_API_KEY`
+(default `claude-haiku-4-5`, override with `RECIPE_RESOLVER_MODEL`, disable with
+`RECIPE_RESOLVER=off`). **That is only for the agent-less surfaces** — the web
+dashboard and a human running the CLI, where no model is in the loop. As an
+agent, you don't need it; your `--package` / `--repos` always take precedence.
+
 ## How to use the result
 
 The JSON is `{ library, reposMined, sources, analysis, steps: [{ name, freq,

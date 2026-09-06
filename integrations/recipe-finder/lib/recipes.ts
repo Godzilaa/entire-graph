@@ -50,6 +50,15 @@ export type Recipe = {
   keywords: string[];
   steps: Step[];
   analysis?: Analysis;
+  // Present only when the optional LLM resolver seeded discovery. The recipe is
+  // still built from real graph edges; this records LLM suggestion vs. what the
+  // graph confirmed, so users/agents know a model was in the loop.
+  resolver?: {
+    model: string | null;
+    ecosystem: string;
+    suggested: string[];
+    confirmed: string;
+  };
 };
 
 import generatedJson from "./recipes.generated.json";

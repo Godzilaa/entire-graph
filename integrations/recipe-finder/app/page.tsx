@@ -218,6 +218,13 @@ function RecipeView({ recipe }: { recipe: ApiRecipe }) {
           Mined from {recipe.reposMined} repositories · {recipe.callSites} call
           sites · runners-up: {recipe.runnersUp}
         </p>
+        {recipe.resolver ? (
+          <p className="recipe-meta resolver-note">
+            🤖 LLM suggested <b>{recipe.resolver.suggested.join(", ") || "—"}</b> →
+            graph confirmed <b>{recipe.resolver.confirmed}</b>. Suggestions are a
+            starting point; the receipts below are the proof.
+          </p>
+        ) : null}
       </div>
 
       <EvidenceBanner recipe={recipe} />
