@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { findRecipe } from "@/lib/recipes";
 import { corpusEnabled, queryRecipe, saveRecipe, deriveRecipe } from "@/lib/corpus";
 
@@ -49,10 +48,23 @@ export async function GET(request: Request) {
 
   const spawnEnv = { ...process.env, PATH: `${process.env.HOME}/.local/bin:${process.env.PATH}` };
 
+  // The local engine (entire-graph + gh + git) only exists on a real machine, not
+  // on serverless. RECIPE_ENGINE_DIR points at it; it's unset on Vercel, where we
+  // serve the mined corpus (and Databricks, if configured) but can't live-mine.
+  // Built as a variable (never a bare string literal) so the bundler doesn't try
+  // to resolve the engine scripts as modules at build time.
+  const engineDir: string | null =
+    process.env.RECIPE_ENGINE_DIR ?? (process.env.VERCEL ? null : "engine");
+
+  // Load child_process only when the local engine exists — via a runtime import
+  // so Next's static bundler doesn't try to trace the spawned script paths (they
+  // don't exist in the serverless bundle, and this branch never runs there).
+  const spawnSync = engineDir ? (await import("node:child_process")).spawnSync : null;
+
   // 4. live on Databricks: fan the parse across many repos → land raw edges,
   //    then aggregate the recipe in SQL on the warehouse (the scale path).
-  if (corpusEnabled()) {
-    const ing = spawnSync("node", ["engine/ingest-databricks.mjs", q], {
+  if (corpusEnabled() && engineDir) {
+    const ing = spawnSync!("node", [`${engineDir}/ingest-databricks.mjs`, q], {
       cwd: process.cwd(),
       encoding: "utf8",
       timeout: 240000,
@@ -79,9 +91,22 @@ export async function GET(request: Request) {
     // ingest or SQL aggregation failed — fall through to the local engine
   }
 
+  // On a host without the local engine (e.g. Vercel serverless), there's no way
+  // to live-mine — serve the corpus only and say so clearly.
+  if (!engineDir) {
+    return Response.json(
+      {
+        error: "live mining unavailable on this host",
+        query: q,
+        hint: "this deployment serves the pre-mined corpus (and Databricks if configured); run the engine locally or via the skill to mine new goals",
+      },
+      { status: 501 }
+    );
+  }
+
   // 4b. fallback: entire-graph engine discovers → mines → derives in-process
   //     (no Databricks workspace, or the Spark path was unavailable)
-  const res = spawnSync("node", ["engine/cli.mjs", "generate", q, "--json"], {
+  const res = spawnSync!("node", [`${engineDir}/cli.mjs`, "generate", q, "--json"], {
     cwd: process.cwd(),
     encoding: "utf8",
     timeout: 240000,
