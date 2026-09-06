@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>recipe-finder — project document</title>
+<style>
+  :root{
+    --navy:#0d1f33; --ink:#1a2b3c; --dim:#54636f; --line:#e2e8ee; --accent:#c0653a;
+    --green:#1f7a47; --amber:#9a6b12; --red:#a3341f; --cream:#f6f2ea;
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:-apple-system,'Helvetica Neue',Arial,sans-serif;
+  }
+  @page{ size:A4; margin:20mm 18mm 18mm; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; font-family:var(--sans); color:var(--ink);
+    font-size:10.6pt; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  /* cover */
+  .cover{ page-break-after:always; padding-top:38mm; }
+  .cover .brand{ display:flex; align-items:center; gap:10px; }
+  .cover .brand svg{ display:block; }
+  .cover .brand span{ font-family:var(--serif); font-size:15pt; color:var(--navy); }
+  .cover .kick{ margin-top:24mm; font-size:9pt; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent); font-weight:700; }
+  .cover h1{ font-family:var(--serif); font-weight:400; font-size:40pt; letter-spacing:-1px;
+    color:var(--navy); margin:6px 0 0; }
+  .cover .sub{ font-family:var(--serif); font-size:15pt; color:var(--dim); margin-top:10px; max-width:150mm; line-height:1.35; }
+  .cover .sub em{ color:var(--accent); font-style:italic; }
+  .cover .meta{ margin-top:26mm; border-top:1px solid var(--line); padding-top:10px; font-size:9.5pt; color:var(--dim); }
+  .cover .meta b{ color:var(--ink); }
+  .cover .meta a{ color:var(--accent); text-decoration:none; }
+
+  h2{ font-family:var(--serif); font-weight:400; font-size:17pt; color:var(--navy); letter-spacing:-.3px;
+    margin:16px 0 6px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  h2:first-of-type{ margin-top:0; }
+  h3{ font-size:10.6pt; color:var(--accent); text-transform:uppercase; letter-spacing:.05em; margin:12px 0 4px; }
+  p{ margin:0 0 8px; }
+  em{ color:var(--accent); font-style:italic; }
+  strong{ color:var(--navy); }
+  ul{ margin:2px 0 10px; padding-left:0; list-style:none; }
+  li{ position:relative; padding-left:15px; margin-bottom:5px; }
+  li::before{ content:"›"; position:absolute; left:0; color:var(--accent); font-weight:700; }
+  code{ font-family:'SF Mono',Menlo,Consolas,monospace; font-size:9pt; background:#eef2f6; color:#0d1f33;
+    padding:1px 5px; border-radius:4px; }
+  pre{ background:var(--navy); color:#d7e8ff; border-radius:8px; padding:11px 13px; font-size:8.6pt;
+    line-height:1.5; overflow:hidden; margin:6px 0 10px; white-space:pre-wrap;
+    font-family:'SF Mono',Menlo,Consolas,monospace; }
+  .lead{ font-size:11.4pt; color:var(--dim); line-height:1.5; }
+  table{ border-collapse:collapse; width:100%; margin:6px 0 10px; font-size:9.6pt; }
+  th,td{ text-align:left; padding:6px 9px; border:1px solid var(--line); vertical-align:top; }
+  th{ background:#f4f7fa; color:var(--navy); font-weight:700; }
+  .tier-c{ color:var(--green); font-weight:700; }
+  .tier-h{ color:var(--amber); font-weight:700; }
+  .tier-u{ color:var(--red); font-weight:700; }
+  .callout{ border-left:3px solid var(--accent); background:var(--cream); padding:9px 13px; border-radius:0 8px 8px 0;
+    margin:8px 0 10px; font-size:10pt; }
+  .avoid-break{ page-break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="cover">
+  <div class="brand">
+    <svg width="34" height="20" viewBox="0 0 34 20"><path d="M2 1h7a9 9 0 0 1 0 18H2z" fill="#0d1f33"/><path d="M15 1h7a9 9 0 0 1 0 18h-7z" fill="#0d1f33"/></svg>
+    <span>recipe</span>
+  </div>
+  <div class="kick">Build on Entire Graph — Project Document</div>
+  <h1>recipe&#8209;finder</h1>
+  <p class="sub">Turn an end goal into a proven, <em>cited</em> integration recipe — grounded in how real repositories actually wire the code.</p>
+  <div class="meta">
+    <p><b>What it is</b>&nbsp; A goal-driven engine that returns a playbook where every step has a real <code>file:line</code> receipt — evidence mined from the Entire Graph, not an LLM guess.</p>
+    <p style="margin-top:6px;"><b>Live demo</b>&nbsp; <a>recipe-finder-2wvbem0sj-pratik2ts-projects.vercel.app</a> &nbsp;·&nbsp; <b>Code</b>&nbsp; integrations/recipe-finder/ &nbsp;·&nbsp; <b>Skill</b>&nbsp; skills/recipe-finder/</p>
+  </div>
+</section>
+
+<!-- BODY -->
+<h2>1 · Overview</h2>
+<p class="lead">recipe-finder answers the question a developer asks constantly — <em>"I want to build X; which packages do I use, and how do I wire them together?"</em> — using the structure of real codebases rather than blog posts, stale docs, or model guesses.</p>
+<p>You state the <strong>end goal</strong>, not a library. The Entire Graph — a precomputed, deterministic, local, no-egress code graph of functions, types, and the <code>IMPORTS</code> / <code>CALLS</code> / <code>CONSTRUCTS</code> relations between them — resolves which library real repositories actually use and how they wire it. The output is a ranked playbook in which <strong>every claim is a graph edge with a clickable receipt</strong>. "8 of 10 collaborative-editor repos import <code>@tiptap/react</code>" is a fact you can click into, not an opinion.</p>
+
+<h2>2 · The problem, and why the graph</h2>
+<p>Integration advice is ungrounded. Tutorials rot, libraries drift, and a "plausible" API is often the wrong one. The one thing that <em>is</em> grounded is production code: what real projects import and call. A code graph turns that into queryable evidence, so a recommendation can be <strong>verified</strong> rather than trusted on faith. That verifiability is the entire value proposition.</p>
+
+<h2>3 · How it works</h2>
+<p>A single engine drives the pipeline. Discovery is grounded in reality; resolution and mining are grounded in the graph.</p>
+<pre>goal ─▶ discover real repos      (GitHub search — grounded, not a model)
+     ─▶ entire graph edges       (IMPORTS / CALLS / CONSTRUCTS as NDJSON)
+     ─▶ resolve the LIBRARY      (the dominant import repos actually use)
+     ─▶ mine the real APIs       (top symbols co-located with that library)
+     ─▶ cited recipe             (Install + ranked steps, each with receipts)</pre>
+<p>The graph even corrected our own design. For "kanban", naive auto-resolution first surfaced an icon library; the <code>IMPORTS</code> edges showed that real repos use <code>react-dnd</code>. Mining <code>@dnd-kit/sortable</code> then produced <code>useSortable</code> and <code>useSensor</code> from real call sites, with receipts — the exact hooks a human would otherwise guess at.</p>
+
+<h2>4 · The graph is evidence, not an oracle</h2>
+<p>This is the hard part, and the core design principle. Static analysis cannot fully resolve dynamic dispatch, reflection, generated code, or inventory-only languages — and some files fail to parse. The product must never present incomplete evidence as certain. So <strong>every step is graded into one of three honest tiers</strong>:</p>
+<table class="avoid-break">
+  <tr><th>Tier</th><th>Meaning</th><th>What to do</th></tr>
+  <tr><td class="tier-c">✓ Confirmed</td><td>The graph resolved this edge to a real definition / import.</td><td>Safe default — still pin to your installed version.</td></tr>
+  <tr><td class="tier-h">≈ Heuristic</td><td>Matched by name or inference; dynamic dispatch can fool it.</td><td>Likely right — open a receipt and confirm against source.</td></tr>
+  <tr><td class="tier-u">? Unverified</td><td>The graph could not resolve it — a blind spot, not an absence.</td><td>Treat as a lead; confirm with source or a test.</td></tr>
+</table>
+<p>Each recipe also carries an <strong>analysis</strong> block. It reads the snapshot's completeness signals (parse failures, inventory-only languages, degraded completeness), flags the result as <strong>partial</strong> when the mined set was incompletely analyzed, and prints a concrete <strong>verification path</strong>. A missing step is never treated as "not needed." Crucially, fully-resolved code still yields a complete, confident recipe — the honesty layer adds a caveat, it does not blank out real evidence.</p>
+<div class="callout"><strong>Why it matters:</strong> this is what separates a trustworthy tool from a confident-but-wrong one. Users and agents can tell apart confirmed structural facts, heuristic name-matches, and claims that still require a source or test check.</div>
+
+<h2>5 · Architecture</h2>
+<h3>Three surfaces over one engine</h3>
+<ul>
+  <li><strong>Skill / CLI</strong> — a coding agent pulls a recipe mid-task. The agent <em>is</em> the resolver: it supplies judgment (which library, which repos), the engine supplies evidence.</li>
+  <li><strong>Web dashboard + API</strong> — a Next.js app and <code>GET /api/recipe</code> for humans and programmatic callers, served from a mined corpus.</li>
+  <li><strong>Docs</strong> — the verify-first angle, in the repo and on the site.</li>
+</ul>
+<h3>Depth</h3>
+<ul>
+  <li><strong>Multi-language.</strong> The engine is language-agnostic (per-language package resolution, install command, and API filtering) across every language Entire Graph resolves semantically — JS/TS, Python, Java, Go, Ruby, Rust, PHP, C#, Kotlin, Swift, and more — keyed off resolved external symbols so internal-method noise is excluded.</li>
+  <li><strong>Optional LLM resolver.</strong> For the agent-less surfaces (web app, human CLI), Claude can <em>propose</em> candidate libraries and search terms; the graph still <em>verifies</em> — a candidate is used only if real repos actually import it, so a wrong guess cannot invent a library. It is off unless <code>ANTHROPIC_API_KEY</code> is set, and each recipe records the LLM's <code>suggested</code> vs the graph's <code>confirmed</code> library for transparency.</li>
+  <li><strong>Databricks Spark scale path.</strong> Raw graph edges land in a <code>code_edges</code> Delta table and recipes are aggregated in SQL, so a goal can be mined from many more repos than one Node process could hold.</li>
+</ul>
+
+<h2>6 · How it uses Entire Graph</h2>
+<ul>
+  <li><strong>Relationship analysis</strong> — <code>entire graph edges --relation IMPORTS,CALLS,CONSTRUCTS</code> is the evidence behind every step.</li>
+  <li><strong>Search / definition lookup</strong> — used to ground the integration in the real NDJSON producer rather than a guess.</li>
+  <li><strong>Snapshot completeness</strong> — the summary record (<code>partial_failures</code>, <code>language_tiers</code>, <code>completeness_level</code>) powers the honesty layer.</li>
+  <li><strong>Semantic diff</strong> — run at submission time to show the entity-level change set.</li>
+</ul>
+<p>Throughout, graph results are treated as <strong>evidence, verified against source — never an oracle.</strong></p>
+
+<h2>7 · Running it</h2>
+<pre>cd integrations/recipe-finder
+npm install                         # first time (web app deps)
+
+# Mine a recipe from a goal (needs: entire CLI + graph plugin, gh authed, git, node)
+node engine/cli.mjs generate "drag and drop kanban board" --json
+node engine/cli.mjs generate "numpy array math" --package numpy --json
+
+npm run dev                         # web app at http://localhost:3000
+node --test engine/evidence.test.mjs   # evidence-grading test suite</pre>
+
+<h2>8 · Status &amp; limitations</h2>
+<ul>
+  <li><strong>Live on Vercel</strong> for browsing the mined corpus. <strong>Live mining does not run on serverless</strong> — it needs the <code>entire</code> parser plus <code>gh</code> and <code>git clone</code> — so a new-goal request returns an honest <code>501 "live mining unavailable on this host"</code>. Live mining runs via the skill / local engine, a non-serverless host, or the Databricks path.</li>
+  <li><strong>Auto-resolution is grounded but can be blunt</strong> on vague goals; mitigated by the agent's <code>--package</code>/<code>--repos</code> and the optional LLM resolver, not fully solved.</li>
+  <li><strong>Tests green</strong> — evidence grading and partial-analysis detection are covered by a hermetic suite plus a live end-to-end check when <code>entire</code> is present.</li>
+</ul>
+<div class="callout"><strong>In one line:</strong> recipe-finder uses the structure of real codebases to support a useful, verifiable decision — which packages to use and how to wire them — and it is honest about exactly how much of that evidence the graph could actually confirm.</div>
+
+</body>
+</html>
