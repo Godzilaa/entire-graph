@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>recipe-finder — deck</title>
+<style>
+  :root{
+    --navy:#0d1f33; --ink:#12283f; --dim:#5b6b7c; --line:#dfe6ee;
+    --cream:#f5f1e9; --accent:#c0653a; --green:#1f7a47; --amber:#9a6b12; --red:#a3341f;
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:-apple-system,'Helvetica Neue',Arial,sans-serif;
+  }
+  @page{ size:13.33in 7.5in; margin:0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ font-family:var(--sans); color:var(--ink); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .slide{
+    position:relative; width:13.33in; height:7.5in; padding:0.72in 0.86in;
+    page-break-after:always; overflow:hidden; background:#fff;
+  }
+  .slide:last-child{ page-break-after:auto; }
+  .kicker{ font-size:12.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+  h1{ font-family:var(--serif); font-weight:400; letter-spacing:-.5px; }
+  h2{ font-family:var(--serif); font-weight:400; font-size:40px; letter-spacing:-.4px; line-height:1.08; }
+  em{ font-style:italic; color:var(--accent); }
+  .foot{ position:absolute; left:0.86in; right:0.86in; bottom:0.5in; display:flex; justify-content:space-between;
+         font-size:11.5px; color:var(--dim); border-top:1px solid var(--line); padding-top:9px; }
+  .foot b{ color:var(--ink); font-weight:700; }
+
+  /* ---- title ---- */
+  .title{ background:var(--navy); color:#eef4fb; }
+  .title .kicker{ color:#8fb4dd; }
+  .title h1{ color:#fff; font-size:82px; line-height:1; margin:26px 0 0; }
+  .title .sub{ font-family:var(--serif); font-size:27px; color:#cfe0f2; margin-top:22px; max-width:9.2in; line-height:1.32; }
+  .title .sub em{ color:#f0b48d; }
+  .title .tag{ margin-top:30px; font-size:15px; color:#9fb6cf; max-width:8.4in; line-height:1.55; }
+  .logo{ display:flex; align-items:center; gap:12px; }
+  .logo svg{ display:block; }
+  .logo span{ font-family:var(--serif); font-size:22px; color:#fff; letter-spacing:.5px; }
+  .title .foot{ border-top-color:rgba(255,255,255,.16); color:#9fb6cf; }
+  .title .foot b{ color:#dbe8f6; }
+  .badge{ display:inline-block; margin-top:34px; padding:8px 15px; border:1px solid rgba(255,255,255,.28);
+          border-radius:999px; font-size:12.5px; color:#cfe0f2; }
+  .badge .dot{ color:#6ee0a6; }
+
+  /* ---- content ---- */
+  .head{ display:flex; align-items:baseline; justify-content:space-between; }
+  .pageno{ font-size:12px; color:var(--dim); font-weight:700; }
+  .lead{ font-size:16.5px; color:var(--dim); line-height:1.5; margin-top:14px; max-width:10.8in; }
+  .cols{ display:flex; gap:34px; margin-top:26px; }
+  .col{ flex:1; }
+  .card{ border:1px solid var(--line); border-radius:14px; padding:20px 22px; background:#fcfbf8; height:100%; }
+  .card h3{ font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); margin-bottom:10px; }
+  .card p{ font-size:15px; line-height:1.5; color:var(--ink); }
+  .card p + p{ margin-top:9px; }
+  ul{ list-style:none; margin-top:8px; }
+  li{ font-size:15px; line-height:1.5; padding-left:20px; position:relative; margin-bottom:9px; color:var(--ink); }
+  li::before{ content:"›"; position:absolute; left:2px; color:var(--accent); font-weight:700; }
+  .muted{ color:var(--dim); }
+  code{ font-family:'SF Mono',Menlo,Consolas,monospace; font-size:12.5px; background:#0d1f33; color:#d7e8ff;
+        padding:2px 7px; border-radius:6px; }
+
+  /* pipeline */
+  .pipe{ display:flex; align-items:stretch; gap:0; margin-top:30px; }
+  .step{ flex:1; text-align:center; padding:0 10px; position:relative; }
+  .step .n{ width:34px; height:34px; margin:0 auto 12px; border-radius:50%; background:var(--navy); color:#fff;
+            font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .step .t{ font-size:14px; font-weight:700; color:var(--ink); line-height:1.25; }
+  .step .d{ font-size:12px; color:var(--dim); margin-top:6px; line-height:1.35; }
+  .step:not(:last-child)::after{ content:"→"; position:absolute; right:-8px; top:8px; color:var(--accent); font-size:20px; }
+  .receipt{ margin-top:30px; background:var(--cream); border:1px solid #e7ddc9; border-radius:12px; padding:16px 20px;
+            font-size:15px; line-height:1.5; }
+  .receipt b{ color:var(--navy); }
+
+  /* tiers */
+  .tiers{ display:flex; gap:18px; margin-top:24px; }
+  .tier{ flex:1; border-radius:14px; padding:18px 20px; border:1px solid; }
+  .tier h3{ font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .tier p{ font-size:13.5px; line-height:1.45; }
+  .t-conf{ background:rgba(31,122,71,.08); border-color:rgba(31,122,71,.3); }
+  .t-conf h3{ color:var(--green); }
+  .t-heur{ background:rgba(214,158,46,.10); border-color:rgba(214,158,46,.34); }
+  .t-heur h3{ color:var(--amber); }
+  .t-unv{ background:rgba(214,69,46,.08); border-color:rgba(214,69,46,.32); }
+  .t-unv h3{ color:var(--red); }
+  .note{ margin-top:22px; font-size:15px; line-height:1.55; color:var(--ink); border-left:3px solid var(--accent);
+         padding-left:16px; }
+</style>
+</head>
+<body>
+
+<!-- 1 · TITLE -->
+<section class="slide title">
+  <div class="logo">
+    <svg width="40" height="24" viewBox="0 0 34 20" aria-label="logo">
+      <path d="M2 1h7a9 9 0 0 1 0 18H2z" fill="#eef4fb"/><path d="M15 1h7a9 9 0 0 1 0 18h-7z" fill="#eef4fb"/>
+    </svg>
+    <span>recipe</span>
+  </div>
+  <div class="kicker" style="margin-top:60px;">Build on Entire Graph</div>
+  <h1>recipe&#8209;finder</h1>
+  <p class="sub">Turn an end goal into a proven, <em>cited</em> integration recipe —<br>grounded in how real repositories actually wire the code.</p>
+  <p class="tag">Say what you want to build. The code graph resolves which library real repos use, mines the real API calls, and returns a playbook where <b style="color:#f0b48d;">every step has a real file:line receipt</b> — evidence, not a guess.</p>
+  <span class="badge"><span class="dot">◆</span>&nbsp; Powered by the Entire Graph · deterministic · local · no-egress</span>
+  <div class="foot"><span>recipe&#8209;finder — an integration built on Entire Graph</span><span><b>01</b> / 05</span></div>
+</section>
+
+<!-- 2 · PROBLEM → IDEA -->
+<section class="slide">
+  <div class="head"><div class="kicker">The problem &amp; the idea</div><div class="pageno">02 / 05</div></div>
+  <h2 style="margin-top:16px;">Integration advice is <em>ungrounded</em>.<br>Real code isn&rsquo;t.</h2>
+  <div class="cols">
+    <div class="col"><div class="card">
+      <h3>The question every developer asks</h3>
+      <p><b>&ldquo;I want to build X — which packages do I use, and how do I wire them together?&rdquo;</b></p>
+      <p class="muted">Today the answer comes from blog posts, stale docs, and LLM guesses. None of it is grounded in what production code actually does — libraries drift, tutorials rot, and &ldquo;plausible&rdquo; APIs are often wrong.</p>
+    </div></div>
+    <div class="col"><div class="card">
+      <h3>The idea</h3>
+      <p>State the <b>end goal</b>, not a library. A precomputed <b>code graph</b> — functions, types, and the IMPORTS / CALLS / CONSTRUCTS relations between them — answers from reality.</p>
+      <p class="muted">The graph resolves <b>which library real repos truly use</b> and <b>how they wire it</b>, so the recipe is verifiable: every claim is an edge with a clickable receipt, not an opinion.</p>
+    </div></div>
+  </div>
+  <p class="note">&ldquo;8 of 10 collaborative-editor repos import <code>@tiptap/react</code>&rdquo; is a fact you can click into — not a blog&rsquo;s guess.</p>
+  <div class="foot"><span><b>recipe&#8209;finder</b> · goal → cited recipe</span><span>The graph reports truth; the agent decides what to trust.</span></div>
+</section>
+
+<!-- 3 · HOW IT WORKS -->
+<section class="slide">
+  <div class="head"><div class="kicker">How it works</div><div class="pageno">03 / 05</div></div>
+  <h2 style="margin-top:16px;">Goal in. <em>Cited playbook</em> out.</h2>
+  <p class="lead">One engine drives the whole pipeline — discovery is grounded in reality, resolution and mining are grounded in the graph.</p>
+  <div class="pipe">
+    <div class="step"><div class="n">1</div><div class="t">Discover repos</div><div class="d">real projects for the goal (GitHub search)</div></div>
+    <div class="step"><div class="n">2</div><div class="t">Entire Graph edges</div><div class="d">IMPORTS / CALLS / CONSTRUCTS as NDJSON</div></div>
+    <div class="step"><div class="n">3</div><div class="t">Resolve the library</div><div class="d">the dominant import repos actually use</div></div>
+    <div class="step"><div class="n">4</div><div class="t">Mine the real APIs</div><div class="d">top symbols co-located with that library</div></div>
+    <div class="step"><div class="n">5</div><div class="t">Cited recipe</div><div class="d">Install + ranked steps, each with receipts</div></div>
+  </div>
+  <div class="receipt">
+    <b>Verifiable by construction.</b> &nbsp;The graph corrected our own design: for &ldquo;kanban&rdquo;, auto-resolution first surfaced an icon library — the IMPORTS edges showed real repos use <code>react-dnd</code>. Mining <code>@dnd-kit/sortable</code> then yielded <code>useSortable</code> / <code>useSensor</code> from real call sites, with receipts — the exact hooks a human would otherwise guess.
+  </div>
+  <div class="foot"><span><b>recipe&#8209;finder</b> · one engine, three surfaces</span><span>Multi-language: JS/TS, Python, Java, Go, Ruby, Rust, …</span></div>
+</section>
+
+<!-- 4 · EVIDENCE NOT ORACLE -->
+<section class="slide">
+  <div class="head"><div class="kicker">The hard part — honesty</div><div class="pageno">04 / 05</div></div>
+  <h2 style="margin-top:16px;">The graph is <em>evidence</em>, not an oracle.</h2>
+  <p class="lead">Static analysis can&rsquo;t fully resolve dynamic dispatch, reflection, generated code, or inventory-only languages — and some files fail to parse. The product must never present incomplete evidence as certain. So every step is <b>graded</b>:</p>
+  <div class="tiers">
+    <div class="tier t-conf"><h3>✓ Confirmed</h3><p>The graph resolved this edge to a real definition / import. Safe default — still pin to your installed version.</p></div>
+    <div class="tier t-heur"><h3>≈ Heuristic · verify</h3><p>Matched by name or inference — dynamic dispatch can fool it. Likely right; open a receipt and confirm against source.</p></div>
+    <div class="tier t-unv"><h3>? Unverified · check source</h3><p>The graph couldn&rsquo;t resolve it — a blind spot, not a confirmed absence. Treat as a lead; confirm with source or a test.</p></div>
+  </div>
+  <p class="note">Each recipe also carries an <b>analysis</b> block: it detects parse failures and blind repos, flags the result as <b>partial</b>, and prints a concrete <b>verification path</b>. A missing step is never treated as &ldquo;not needed.&rdquo;</p>
+  <div class="foot"><span><b>recipe&#8209;finder</b> · confirmed vs heuristic vs unverified</span><span>Fully-resolved code still produces a complete, confident recipe.</span></div>
+</section>
+
+<!-- 5 · ARCHITECTURE & STATUS -->
+<section class="slide">
+  <div class="head"><div class="kicker">Architecture &amp; status</div><div class="pageno">05 / 05</div></div>
+  <h2 style="margin-top:16px;">One engine. <em>Three surfaces.</em> Scales out.</h2>
+  <div class="cols" style="margin-top:20px;">
+    <div class="col"><div class="card">
+      <h3>Surfaces</h3>
+      <ul>
+        <li><b>Skill / CLI</b> — a coding agent pulls a recipe mid-task; the agent <span class="muted">is</span> the resolver.</li>
+        <li><b>Web dashboard + API</b> — humans &amp; programmatic callers; served from a mined corpus.</li>
+        <li><b>Docs</b> — the verify-first angle, in the repo and on the site.</li>
+      </ul>
+    </div></div>
+    <div class="col"><div class="card">
+      <h3>Depth</h3>
+      <ul>
+        <li><b>Optional LLM resolver</b> — proposes candidate libraries; <span class="muted">the graph still verifies.</span></li>
+        <li><b>Databricks Spark path</b> — land raw edges, aggregate recipes in SQL across many repos.</li>
+        <li><b>Evidence grading</b> + partial-analysis detection throughout.</li>
+      </ul>
+    </div></div>
+  </div>
+  <p class="note" style="margin-top:22px;"><b>Status.</b> Live on Vercel (browse the mined corpus); the skill / local engine handles live mining. Language-agnostic engine; evidence-grading test suite green. <span class="muted">Serverless can&rsquo;t run the parser + git — hosted deploy serves the corpus and returns an honest &ldquo;live mining unavailable&rdquo; for new goals.</span></p>
+  <div class="foot"><span><b>recipe&#8209;finder</b> · built on Entire Graph</span><span>Evidence, verified against source — never an oracle.</span></div>
+</section>
+
+</body>
+</html>
