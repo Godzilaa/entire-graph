@@ -1,0 +1,25 @@
+i wanna build a backtesting agent and have Once entire-graph is installed and enabled for a repository, your coding agent can use it to investigate the codebase during a task. entire-graph analyzes the repository locally and returns relevant files, symbols, and relationships. Your agent then inspects the source before answering a question or making changes.
+​
+What entire-graph Analyzes
+entire-graph maps files, symbols, and relationships such as callers, callees, and type usage. It also uses a limited amount of Git history to identify files that often change together.
+entire-graph runs locally and does not send your code to a model or external service. It can reuse a local cache to make later queries faster.
+​
+When to Use entire-graph or Search
+entire-graph and Search can both help your agent find code, but they serve different purposes.
+entire-graph    Search
+Find code    Finds and ranks relevant code in the current repository    Finds matching code across indexed repositories
+Understand relationships    Traces callers, callees, type usage, and potential impact    Returns code locations without tracing their relationships
+Find past context    Uses limited Git history to identify related code    Finds previous commits, sessions, and agent work
+Where it runs    Runs locally without sending your code elsewhere    Uses Entire’s online search and requires an internet connection
+Best used for    Understanding how code connects before making a change    Locating code or learning the history behind it
+The two can work together. Your agent might use Search to locate code or find previous work, then use entire-graph to trace how that code connects and what a change could affect.
+​
+What entire-graph Might Not Find
+How deeply entire-graph can analyze your code depends on the language, and coverage comes in two tiers.
+Semantic languages are parsed for relationships, so impact, neighbors, and def can trace callers, callees, and type usage. There are 36:
+Bash, C, C#, C++, CUE, Clojure, ClojureScript, Dart, Elixir, Erlang, F#, Go, Groovy, HCL, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, Objective-C, PHP, Perl, Protocol Buffers, Python, R, Ruby, Rust, SQL, Scala, Swift, TypeScript, YAML, Zig, Zsh
+Inventory-only filetypes are recognized for file and symbol structure without call or type analysis. There are 149 of these, which is why a file can appear in search results while neighbors returns no relationships for the symbols inside it.
+These counts describe the current release. Run entire graph capabilities --json to see what your installed build supports, and read semantic_languages for the tier that traces relationships.
+Because entire-graph analyzes source without running it, it may miss connections created dynamically through interfaces, reflection, generated code, or other runtime behavior. Treat its results as a focused starting point and verify them against the source.
+​
+ this feature for it how can i do
