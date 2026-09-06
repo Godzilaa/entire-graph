@@ -13,8 +13,9 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { edges, importedModule } from "./graph.mjs";
+import { snapshotGraph, importedModule } from "./graph.mjs";
 import { detectLang, langConfig } from "./langs.mjs";
+import { gradeStep, stepCaveat, buildAnalysis } from "./evidence.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -204,8 +205,23 @@ export function generate(goal, opts = {}) {
 
   for (const r of repos) {
     console.error(`  graphing ${r.name} …`);
-    r.imports = edges(r.path, ["IMPORTS"]);
-    r.calls = edges(r.path, ["CALLS", "CONSTRUCTS"]);
+    // One snapshot yields the SAME edges the miner needs PLUS the authoritative
+    // completeness signal (partial_failures, inventory-only languages) — so a
+    // parse failure or a blind language is never silently dropped from a recipe.
+    const g = snapshotGraph(r.path);
+    r.imports = g.records.filter((x) => x.type === "IMPORTS");
+    r.calls = g.records.filter((x) => x.type === "CALLS" || x.type === "CONSTRUCTS");
+    r.snap = g.meta;
+    r.meta = {
+      name: r.name,
+      partialFailures: g.meta.partialFailures.map((f) => ({ path: f.path, code: f.code })),
+      warnings: g.meta.warnings || [],
+      inventoryOnlyLanguages: g.meta.inventoryOnlyLanguages || [],
+      completenessLevel: g.meta.completenessLevel || "",
+      // A repo that produced no relations at all is a blind spot (inventory-only
+      // language or an all-failed parse), not a confirmed absence of the pattern.
+      relationCount: g.meta.relations ?? g.records.length,
+    };
   }
   // Detect each repo's language, then pick ONE dominant stack and mine only
   // those repos — a recipe must target a single ecosystem (mixing e.g. Java +
@@ -230,15 +246,28 @@ export function generate(goal, opts = {}) {
   const total = repoSet.length;
   const L = langConfig(langKey);
 
+  // Partial-analysis bookkeeping (the graph-is-evidence-not-oracle core): which
+  // mined repos had files the parser could not read (partialFailures) and which
+  // produced NO relations at all (a blind spot — inventory-only language or an
+  // all-failed parse). These gate whether a step may be called "confirmed".
+  const partialRepoNames = new Set(
+    repoSet.filter((r) => (r.meta?.partialFailures?.length || 0) > 0).map((r) => r.name)
+  );
+  const blindRepoNames = new Set(
+    repoSet.filter((r) => (r.meta?.relationCount || 0) === 0).map((r) => r.name)
+  );
+
   // resolve library (agent-supplied wins; else dominant imported package root)
   const pkgRepos = new Map();
   const pkgReceipt = new Map();
+  const pkgRecords = new Map(); // root -> backing IMPORTS records, for grading
   for (const r of repoSet) {
     for (const rec of r.imports) {
       const root = L.root(importedModule(rec));
       if (!root) continue; // relative import, stdlib, or framework noise
-      if (!pkgRepos.has(root)) pkgRepos.set(root, new Set());
+      if (!pkgRepos.has(root)) { pkgRepos.set(root, new Set()); pkgRecords.set(root, []); }
       pkgRepos.get(root).add(r.name);
+      pkgRecords.get(root).push(rec);
       const ev = rec.evidence?.[0];
       if (ev?.file_path && !pkgReceipt.has(root))
         pkgReceipt.set(root, receipt(r.name, r.url, ev.file_path, ev.start_line));
@@ -264,6 +293,11 @@ export function generate(goal, opts = {}) {
   const installPkgs = opts.package ? [...familyPkgs] : family.map(([p]) => p);
   const famCounts = installPkgs.map((p) => pkgRepos.get(p)?.size || 1);
   const installNames = installPkgs.map((p) => L.installName(p));
+  const installRecords = installPkgs.flatMap((p) => pkgRecords.get(p) || []);
+  const installBackers = new Set(installPkgs.flatMap((p) => [...(pkgRepos.get(p) || [])]));
+  const installEvidence = gradeStep(installRecords, {
+    partial: blindRepoNames.size > 0 || [...installBackers].some((n) => partialRepoNames.has(n)),
+  });
   steps.push({
     name: "Install",
     freq: `${Math.max(1, ...famCounts)}/${total}`,
@@ -274,6 +308,8 @@ export function generate(goal, opts = {}) {
         ? `. Most common: ${family.slice(0, 3).map(([p, s]) => `${L.installName(p)} (${s.size}/${total})`).join(", ")}`
         : ""
     }.`,
+    evidence: installEvidence,
+    caveat: stepCaveat(installEvidence),
     receipts: installPkgs.map((p) => pkgReceipt.get(p)).filter(Boolean).slice(0, 4),
   });
 
@@ -285,6 +321,7 @@ export function generate(goal, opts = {}) {
   const symRepos = new Map();
   const symReceipts = new Map();
   const symSnippet = new Map();
+  const symRecords = new Map(); // name -> backing CALLS/CONSTRUCTS records
   for (const r of repoSet) {
     for (const rec of r.calls) {
       if (typeof rec.to_id !== "string" || !rec.to_id.startsWith("external:symbol:")) continue;
@@ -297,8 +334,10 @@ export function generate(goal, opts = {}) {
       if (!symRepos.has(name)) {
         symRepos.set(name, new Set());
         symReceipts.set(name, []);
+        symRecords.set(name, []);
       }
       symRepos.get(name).add(r.name);
+      symRecords.get(name).push(rec);
       const arr = symReceipts.get(name);
       const key = `${r.name}:${ev.file_path}:${ev.start_line}`;
       if (arr.length < 4 && !arr.some((x) => x._k === key)) {
@@ -316,15 +355,25 @@ export function generate(goal, opts = {}) {
   for (const [name, set] of rankedSyms) {
     const receipts = (symReceipts.get(name) || []).map(({ _k, ...r }) => r);
     callSites += receipts.length;
+    // Library API calls resolve to an EXTERNAL symbol by name only, so they are
+    // inherently heuristic evidence — grade them honestly rather than stamping
+    // them "verified". A parse gap in a backing repo (or any blind repo)
+    // downgrades further.
+    const partial = blindRepoNames.size > 0 || [...set].some((n) => partialRepoNames.has(n));
+    const evidence = gradeStep(symRecords.get(name) || [], { partial });
     steps.push({
       name,
       freq: `${set.size}/${total}`,
       level: set.size >= Math.ceil(total / 2) ? "high" : "warn",
       code: symSnippet.get(name) || `${name}(…)`,
       note: `A ${displayLib} API used across ${set.size}/${total} mined repos.`,
+      evidence,
+      caveat: stepCaveat(evidence),
       receipts,
     });
   }
+
+  const analysis = buildAnalysis(repoSet.map((r) => r.meta), langKey);
 
   return {
     id: slug(goal),
@@ -336,6 +385,7 @@ export function generate(goal, opts = {}) {
     runnersUp: rankedPkgs.filter(([p]) => !familyPkgs.has(p)).slice(0, 3).map(([p]) => L.installName(p)).join(", ") || "—",
     keywords: keywordsFromGoal(goal),
     steps,
+    analysis,
     sources: repoSet.map((r) => r.url),
   };
 }

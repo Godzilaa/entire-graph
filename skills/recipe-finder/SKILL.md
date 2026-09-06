@@ -54,15 +54,33 @@ at the resolved `library` and `sources`:
 
 ## How to use the result
 
-The JSON is `{ library, reposMined, sources, steps: [{ name, freq, level, code, receipts }] }`.
+The JSON is `{ library, reposMined, sources, analysis, steps: [{ name, freq,
+level, code, evidence, caveat, receipts }] }`.
 
-1. Read steps in order: `Install` → the ranked library APIs.
-2. `freq` is confidence: `high` (majority of repos) = safe default; `warn` (few
-   repos) = less standardized, verify first.
-3. **Open a receipt** (`file:line`) to see how a real repo wired it before you
-   write the equivalent here. Receipts are evidence, not an oracle — confirm
-   against the current library version.
-4. Then scaffold the feature using the dominant pattern.
+**The graph is evidence, not an oracle — the result tells you how much to trust each part.**
+
+1. **Check `analysis` FIRST.** `analysis.complete` is `false` when the repos were
+   only partially analyzed (a file failed to parse, or a repo produced no
+   resolvable relations — a blind spot). When it is `false`, a *missing* step is
+   NOT proof the step is unnecessary; it may just be unanalyzed. Read
+   `analysis.reasons` and follow `analysis.verify` before trusting completeness.
+2. **Read each step's `evidence.tier`** — this is the honesty signal:
+   - `confirmed` — the graph resolved this edge to a real definition/import. Safe
+     default; still pin to your installed version.
+   - `heuristic` — matched by name or inference (dynamic dispatch / overloads can
+     fool it). Likely right, but **open a receipt and confirm against source.**
+   - `unverified` — the graph could not resolve it. Treat as a lead only; confirm
+     against source or a test.
+   If `evidence.verify` is `true` (always true under partial analysis), verify
+   before relying on the step.
+3. `freq` (`high`/`warn`) is the cross-repo frequency; `evidence.tier` is the
+   structural certainty. They are different axes — a `high`-frequency step can
+   still be `heuristic`.
+4. **Open a receipt** (`file:line`) to see how a real repo wired it before you
+   write the equivalent here.
+5. Then scaffold the feature using the dominant pattern — verifying every
+   `heuristic`/`unverified` step, and re-mining with `--repos` if `analysis`
+   flagged the set as partial or blind.
 
 ## Also available
 

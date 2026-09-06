@@ -2,8 +2,23 @@
 // Reads/writes workspace.recipe.recipes via the SQL Statement Execution API.
 // If the DATABRICKS_* env vars are absent, corpusEnabled() is false and the
 // API route falls back to the local JSON corpus.
-import type { Recipe, Step, Receipt } from "./recipes";
+import type { Recipe, Step, Receipt, Evidence, Analysis } from "./recipes";
 import { matchScore, keywordsFromGoal } from "./recipes";
+
+// The Spark scale path aggregates raw edges in SQL and (by design) does NOT land
+// per-edge `resolution` / `confidence` or the snapshot's `partial_failures` into
+// code_edges — it trades that evidence metadata for cross-repo scale. So it must
+// NOT claim "confirmed": every SQL-derived step is graded heuristic and flagged
+// for source verification, keeping the scale path honest about what it can prove.
+const SPARK_EVIDENCE: Evidence = {
+  tier: "heuristic",
+  resolution: "sql_aggregated",
+  confidence: 0,
+  partial: true,
+  verify: true,
+};
+const SPARK_CAVEAT =
+  "Heuristic: derived by SQL aggregation over raw edges (no per-edge resolution landed on the scale path) — open a receipt and confirm against source.";
 
 const HOST = process.env.DATABRICKS_HOST;
 const TOKEN = process.env.DATABRICKS_TOKEN;
@@ -218,6 +233,8 @@ export async function deriveRecipe(
           ? `. Most common: ${family.slice(0, 3).map((x) => `${x.pkg} (${x.repos}/${total})`).join(", ")}`
           : ""
       }.`,
+      evidence: SPARK_EVIDENCE,
+      caveat: SPARK_CAVEAT,
       receipts: installPkgs.map((pk) => pkgOf(pk)?.receipt).filter(Boolean).slice(0, 4) as Receipt[],
     },
   ];
@@ -260,9 +277,26 @@ export async function deriveRecipe(
       level: n >= Math.ceil(total / 2) ? "high" : "warn",
       code: snippet || `${symbol}(…)`,
       note: `A ${library} API used across ${n}/${total} mined repos.`,
+      evidence: SPARK_EVIDENCE,
+      caveat: SPARK_CAVEAT,
       receipts,
     });
   }
+
+  const analysis: Analysis = {
+    complete: false,
+    confidence: "partial",
+    reposMined: total,
+    reposCleanlyParsed: 0,
+    partialFailureCount: 0,
+    partialFailures: [],
+    blindRepos: [],
+    reasons: [
+      "Served via the Databricks Spark scale path: recipes are aggregated in SQL over raw edges, which do not carry per-edge resolution or the snapshot's parse-failure list. Completeness cannot be certified here.",
+    ],
+    verify:
+      "Scale-path recipe: every step is heuristic. Open each receipt and confirm the symbol against your installed package (types/exports or a source grep) before relying on it.",
+  };
 
   return {
     id: goalSlug,
@@ -275,6 +309,7 @@ export async function deriveRecipe(
       packages.filter((x) => !familyPkgs.has(x.pkg)).slice(0, 3).map((x) => x.pkg).join(", ") || "—",
     keywords: keywordsFromGoal(goal),
     steps,
+    analysis,
     sources,
   };
 }

@@ -7,3 +7,10 @@
 # symbols. Skipping them makes `entire graph index` report a clean, honest graph.
 parser.c
 scanner.c
+
+# recipe-finder's partial-analysis TEST FIXTURE deliberately contains an
+# unparseable file (src/legacy.sql) so its evidence tests can exercise a real
+# E_PARSE_ERROR. The test analyzes it in isolation (against a temp copy), so skip
+# it here to keep THIS repo's own graph from reporting an intentional fixture
+# failure as a real diagnostic.
+integrations/recipe-finder/engine/__fixtures__/

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { type Recipe } from "@/lib/recipes";
+import { type Recipe, type Step, type EvidenceTier } from "@/lib/recipes";
 
 type ApiRecipe = Recipe & { source?: string };
 
@@ -220,13 +220,7 @@ function RecipeView({ recipe }: { recipe: ApiRecipe }) {
         </p>
       </div>
 
-      <div className="glass verify-banner" style={{ borderRadius: 16 }}>
-        ✅{" "}
-        <span>
-          Every step below is <b>graph-verified</b> against real call sites —
-          click any receipt to inspect the source. No guesses.
-        </span>
-      </div>
+      <EvidenceBanner recipe={recipe} />
 
       {recipe.steps.map((step, i) => (
         <div key={step.name} className="glass step">
@@ -235,13 +229,17 @@ function RecipeView({ recipe }: { recipe: ApiRecipe }) {
               <span className="step-num">{i + 1}</span>
               {step.name}
             </div>
-            <span className={`freq ${step.level === "high" ? "freq-high" : "freq-warn"}`}>
-              {step.level === "high" ? "✓ " : "⚠ "}
-              {step.freq} repos
-            </span>
+            <div className="step-badges">
+              <TierBadge step={step} />
+              <span className={`freq ${step.level === "high" ? "freq-high" : "freq-warn"}`}>
+                {step.level === "high" ? "✓ " : "⚠ "}
+                {step.freq} repos
+              </span>
+            </div>
           </div>
           {step.code ? <code>{step.code}</code> : null}
           {step.note ? <p className="step-note">{step.note}</p> : null}
+          {step.caveat ? <p className="step-caveat">{step.caveat}</p> : null}
           <div className="receipts">
             {step.receipts.map((r, ri) => (
               <a
@@ -257,6 +255,72 @@ function RecipeView({ recipe }: { recipe: ApiRecipe }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+const TIER_META: Record<EvidenceTier, { label: string; icon: string }> = {
+  confirmed: { label: "confirmed", icon: "✓" },
+  heuristic: { label: "heuristic · verify", icon: "≈" },
+  unverified: { label: "unverified · check source", icon: "?" },
+};
+
+// Per-step honesty badge: tells confirmed structural evidence apart from a
+// name-matched guess or a graph blind spot. No badge for un-graded (curated)
+// steps so older/hand-authored recipes still render cleanly.
+function TierBadge({ step }: { step: Step }) {
+  const tier = step.evidence?.tier;
+  if (!tier) return null;
+  const m = TIER_META[tier];
+  return (
+    <span className={`tier tier-${tier}`} title={step.caveat || ""}>
+      {m.icon} {m.label}
+    </span>
+  );
+}
+
+// Replaces the old "every step is graph-verified — no guesses" banner. Now it
+// reports whether the mined analysis was COMPLETE and, when it was partial,
+// surfaces exactly why plus the verification path. Falls back to a measured
+// message for un-graded (curated) recipes.
+function EvidenceBanner({ recipe }: { recipe: Recipe }) {
+  const a = recipe.analysis;
+  if (!a) {
+    return (
+      <div className="glass verify-banner" style={{ borderRadius: 16 }}>
+        🔎{" "}
+        <span>
+          Each step is backed by a real <b>file:line</b> receipt — evidence, not
+          an oracle. Click a receipt and confirm against your installed version.
+        </span>
+      </div>
+    );
+  }
+  if (a.complete) {
+    return (
+      <div className="glass verify-banner" style={{ borderRadius: 16 }}>
+        ✅{" "}
+        <span>
+          All {a.reposMined} repos parsed cleanly. Steps are graded by graph
+          evidence: <b>confirmed</b> = resolved edges, <b>heuristic</b> =
+          name-matched (verify). {a.verify}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="glass verify-banner verify-banner-warn" style={{ borderRadius: 16 }}>
+      ⚠️{" "}
+      <span>
+        <b>Partial analysis.</b> {a.verify}
+        {a.reasons.length ? (
+          <ul className="analysis-reasons">
+            {a.reasons.slice(0, 4).map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
+          </ul>
+        ) : null}
+      </span>
     </div>
   );
 }

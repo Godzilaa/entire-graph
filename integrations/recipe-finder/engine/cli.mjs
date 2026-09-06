@@ -36,15 +36,33 @@ function findRecipe(query) {
   return best;
 }
 
+const TIER_TAG = {
+  confirmed: "✓ confirmed",
+  heuristic: "≈ heuristic·verify",
+  unverified: "? unverified·check source",
+};
+
 function printRecipe(r) {
   console.log(`\n  RECIPE  ${r.library} — ${r.title} ${r.emphasis}`);
   console.log(
-    `  mined from ${r.reposMined} repos · ${r.callSites} call sites · runners-up: ${r.runnersUp}\n`
+    `  mined from ${r.reposMined} repos · ${r.callSites} call sites · runners-up: ${r.runnersUp}`
   );
+  // Evidence honesty banner — "the graph is evidence, not an oracle."
+  const a = r.analysis;
+  if (a && !a.complete) {
+    console.log(`\n  ⚠ PARTIAL ANALYSIS (${a.confidence}). Missing steps may just be unanalyzed, not absent.`);
+    for (const reason of (a.reasons || []).slice(0, 4)) console.log(`     - ${reason}`);
+    if (a.verify) console.log(`     → ${a.verify}`);
+  } else if (a && a.complete) {
+    console.log(`\n  ✅ Full analysis: all ${a.reposMined} repos parsed cleanly. Tiers below grade each step's evidence.`);
+  }
+  console.log();
   r.steps.forEach((s, i) => {
-    console.log(`  ${i + 1}. ${s.name}   [${s.level === "high" ? "✓" : "⚠"} ${s.freq} repos]`);
+    const tier = s.evidence?.tier ? `  [${TIER_TAG[s.evidence.tier] || s.evidence.tier}]` : "";
+    console.log(`  ${i + 1}. ${s.name}   [${s.level === "high" ? "✓" : "⚠"} ${s.freq} repos]${tier}`);
     if (s.code) console.log(s.code.split("\n").map((l) => "       " + l).join("\n"));
     if (s.note) console.log("     " + s.note);
+    if (s.caveat) console.log("     ⓘ " + s.caveat);
     s.receipts.forEach((x) => console.log("       ↗ " + x.label));
     console.log();
   });

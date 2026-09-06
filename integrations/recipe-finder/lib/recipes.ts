@@ -3,12 +3,39 @@ export type Receipt = {
   url: string;
 };
 
+// Evidence grade for one step — "the graph is evidence, not an oracle."
+// Mirrors engine/evidence.mjs. Optional so hand-authored fallback recipes and
+// older mined rows (without grading) still type-check and render.
+export type EvidenceTier = "confirmed" | "heuristic" | "unverified";
+export type Evidence = {
+  tier: EvidenceTier;
+  resolution: string; // dominant graph resolution, e.g. "import_resolved", "name_only"
+  confidence: number;
+  partial: boolean; // a backing repo was only partially analyzed
+  verify: boolean; // must be confirmed against source/tests before relying on it
+};
+
+// Recipe-level partial-analysis summary from the mined repos' snapshots.
+export type Analysis = {
+  complete: boolean;
+  confidence: "confirmed" | "partial" | "low";
+  reposMined: number;
+  reposCleanlyParsed: number;
+  partialFailureCount: number;
+  partialFailures: { repo: string; path: string; code: string }[];
+  blindRepos: string[];
+  reasons: string[];
+  verify: string; // the safe fallback / verification path
+};
+
 export type Step = {
   name: string;
   freq: string; // e.g. "8/10"
   level: "high" | "warn";
   code?: string;
   note?: string;
+  evidence?: Evidence;
+  caveat?: string;
   receipts: Receipt[];
 };
 
@@ -22,6 +49,7 @@ export type Recipe = {
   runnersUp: string;
   keywords: string[];
   steps: Step[];
+  analysis?: Analysis;
 };
 
 import generatedJson from "./recipes.generated.json";

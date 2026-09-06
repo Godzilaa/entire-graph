@@ -1,0 +1,11 @@
+{
+  "name": "partial-analysis-fixture",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A repo the code graph can only PARTIALLY analyze: cleanly-resolvable library usage next to dynamic dispatch and an unparseable file. Used by engine/evidence.test.mjs to prove the recipe engine flags incomplete evidence instead of presenting it as certain.",
+  "dependencies": {
+    "@tiptap/react": "^2.0.0",
+    "@tiptap/starter-kit": "^2.0.0",
+    "yjs": "^13.0.0"
+  }
+}
