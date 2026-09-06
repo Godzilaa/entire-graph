@@ -1,0 +1,147 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "3708e1a0f429",
+  "session_id": "3c5f7015-6e19-4871-be0c-d4d423dd7adf",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T06:30:55.103282807Z",
+  "branch": "main",
+  "checkpoints_count": 11,
+  "save_step_count": 9,
+  "files_touched": [
+    "integrations/recipe-finder/app/api/recipe/route.ts",
+    "integrations/recipe-finder/databricks/README.md",
+    "integrations/recipe-finder/databricks/derive.sql",
+    "integrations/recipe-finder/databricks/schema.sql",
+    "integrations/recipe-finder/engine/cli.mjs",
+    "integrations/recipe-finder/engine/generate.mjs",
+    "integrations/recipe-finder/engine/ingest-databricks.mjs",
+    "integrations/recipe-finder/engine/langs.mjs",
+    "integrations/recipe-finder/lib/corpus.ts",
+    "integrations/recipe-finder/lib/recipes.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8[1m]",
+  "turn_id": "61343585881e",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 15567,
+    "cache_creation_tokens": 331446,
+    "cache_read_tokens": 22866101,
+    "output_tokens": 209633,
+    "api_call_count": 132
+  },
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T06:30:54.86515018Z",
+    "agent_lines": 825,
+    "agent_removed": 101,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 825,
+    "total_lines_changed": 926,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 10,
+      "user_lines_removed": 0,
+      "agent_lines_added": 416,
+      "agent_lines_removed": 34,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 10
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 10,
+      "user_lines_removed": 0,
+      "agent_lines_added": 416,
+      "agent_lines_removed": 34,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 10
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 10,
+      "user_lines_removed": 0,
+      "agent_lines_added": 416,
+      "agent_lines_removed": 34,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 10
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 11,
+      "user_lines_removed": 0,
+      "agent_lines_added": 502,
+      "agent_lines_removed": 59,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 11
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 11,
+      "user_lines_removed": 0,
+      "agent_lines_added": 527,
+      "agent_lines_removed": 57,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 11
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 13,
+      "user_lines_removed": 0,
+      "agent_lines_added": 527,
+      "agent_lines_removed": 57,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 13
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 17,
+      "user_lines_removed": 0,
+      "agent_lines_added": 527,
+      "agent_lines_removed": 57,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 17
+      }
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 31,
+      "user_lines_removed": 0,
+      "agent_lines_added": 551,
+      "agent_lines_removed": 57,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 31
+      }
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 33,
+      "user_lines_removed": 0,
+      "agent_lines_added": 825,
+      "agent_lines_removed": 101,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 33
+      }
+    }
+  ]
+}

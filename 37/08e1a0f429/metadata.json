@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "3708e1a0f429",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 11,
+  "files_touched": [
+    "integrations/recipe-finder/app/api/recipe/route.ts",
+    "integrations/recipe-finder/databricks/README.md",
+    "integrations/recipe-finder/databricks/derive.sql",
+    "integrations/recipe-finder/databricks/schema.sql",
+    "integrations/recipe-finder/engine/cli.mjs",
+    "integrations/recipe-finder/engine/generate.mjs",
+    "integrations/recipe-finder/engine/ingest-databricks.mjs",
+    "integrations/recipe-finder/engine/langs.mjs",
+    "integrations/recipe-finder/lib/corpus.ts",
+    "integrations/recipe-finder/lib/recipes.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/37/08e1a0f429/0/metadata.json",
+      "transcript": "/37/08e1a0f429/0/full.jsonl",
+      "compact_transcript": "/37/08e1a0f429/0/transcript.jsonl",
+      "content_hash": "/37/08e1a0f429/0/content_hash.txt",
+      "prompt": "/37/08e1a0f429/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 15567,
+    "cache_creation_tokens": 331446,
+    "cache_read_tokens": 22866101,
+    "output_tokens": 209633,
+    "api_call_count": 132
+  }
+}
