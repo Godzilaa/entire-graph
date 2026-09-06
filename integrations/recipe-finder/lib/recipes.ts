@@ -265,17 +265,73 @@ export const RECIPES: Recipe[] = [
   ...FALLBACK_RECIPES.filter((r) => !minedIds.has(r.id)),
 ];
 
+// Stopwords + generic web words that must never act as match keywords — without
+// this "and"/"a"/"react" match almost any query and a random goal wrongly
+// resolves to a stale corpus recipe instead of falling through to live mining.
+export const STOPWORDS = new Set([
+  "a", "an", "the", "and", "or", "of", "to", "for", "in", "on", "with", "app",
+  "apps", "react", "vue", "svelte", "build", "building", "using", "use", "my",
+  "your", "how", "do", "i", "is", "it", "that", "this", "want", "need", "make",
+  "web", "site", "page",
+]);
+// A lone single-token keyword this long is distinctive enough to match on its
+// own ("kanban", "wysiwyg", "roulette"); shorter generic words ("table",
+// "email", "board", "login") must not win alone.
+export const DISTINCTIVE_LEN = 6;
+
+const norm = (s: string) => s.toLowerCase().replace(/[-_]/g, " ").trim();
+
+// Score a query against a recipe's keywords AND decide if the match is
+// trustworthy. Single-token keywords must match a whole query word (so "board"
+// does NOT match "keyboard"); multi-word phrases match as a normalized
+// substring. Stopwords are ignored. A match is only ACCEPTED when the signal is
+// real — a phrase hit, OR two distinct word hits, OR one distinctive long word —
+// so a random query that merely shares one generic word (e.g. "table") misses
+// and falls through to live mining instead of serving a stale recipe.
+export function matchScore(
+  query: string,
+  keywords: string[]
+): { score: number; accept: boolean } {
+  const nq = norm(query);
+  if (!nq) return { score: 0, accept: false };
+  const tokens = new Set(nq.split(/\s+/).filter(Boolean));
+  let score = 0;
+  let phraseHits = 0;
+  let tokenHits = 0;
+  let bestLoneLen = 0;
+  for (const raw of keywords || []) {
+    if (!raw || STOPWORDS.has(raw.toLowerCase().trim())) continue;
+    const kw = norm(raw);
+    if (!kw) continue;
+    if (kw.includes(" ")) {
+      if (nq.includes(kw)) {
+        score += kw.length;
+        phraseHits++;
+      }
+    } else if (tokens.has(kw)) {
+      score += kw.length;
+      tokenHits++;
+      bestLoneLen = Math.max(bestLoneLen, kw.length);
+    }
+  }
+  const accept = phraseHits >= 1 || tokenHits >= 2 || bestLoneLen >= DISTINCTIVE_LEN;
+  return { score, accept };
+}
+
+// Derive clean match keywords from a goal: the full phrase plus each meaningful
+// word (length >= 3, not a stopword), deduped.
+export function keywordsFromGoal(goal: string): string[] {
+  const g = goal.toLowerCase().trim();
+  const words = g.split(/\s+/).filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+  return [...new Set([g, ...words].filter(Boolean))];
+}
+
 export function findRecipe(query: string): Recipe | null {
-  const q = query.toLowerCase().trim();
-  if (!q) return null;
   let best: Recipe | null = null;
   let bestScore = 0;
   for (const r of RECIPES) {
-    let score = 0;
-    for (const kw of r.keywords) {
-      if (q.includes(kw)) score += kw.length; // longer matches weigh more
-    }
-    if (score > bestScore) {
+    const { score, accept } = matchScore(query, r.keywords);
+    if (accept && score > bestScore) {
       bestScore = score;
       best = r;
     }

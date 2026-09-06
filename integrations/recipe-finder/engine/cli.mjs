@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { generate, saveRecipe } from "./generate.mjs";
+import { generate, saveRecipe, matchScore } from "./generate.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -24,15 +24,12 @@ function load() {
 
 // same keyword scoring as the web app's findRecipe()
 function findRecipe(query) {
-  const q = query.toLowerCase().trim();
-  if (!q) return null;
   let best = null;
-  let score = 0;
+  let bestScore = 0;
   for (const r of load()) {
-    let s = 0;
-    for (const kw of r.keywords || []) if (q.includes(kw)) s += kw.length;
-    if (s > score) {
-      score = s;
+    const { score, accept } = matchScore(query, r.keywords || []);
+    if (accept && score > bestScore) {
+      bestScore = score;
       best = r;
     }
   }
@@ -93,6 +90,11 @@ if (cmd === "query" || cmd === "recipe") {
 } else if (cmd === "mine") {
   const res = spawnSync("node", [join(__dirname, "mine.mjs"), ...rest], { stdio: "inherit" });
   process.exit(res.status ?? 0);
+} else if (cmd === "ingest") {
+  // fan the parse across many repos → land raw edges in Databricks code_edges;
+  // aggregate with lib/corpus.ts::deriveRecipe() / databricks/derive.sql
+  const res = spawnSync("node", [join(__dirname, "ingest-databricks.mjs"), ...rest], { stdio: "inherit" });
+  process.exit(res.status ?? 0);
 } else if (cmd === "list") {
   const all = load();
   if (!all.length) console.log("No recipes yet. Run: node engine/cli.mjs mine tiptap");
@@ -102,7 +104,8 @@ if (cmd === "query" || cmd === "recipe") {
   console.log(`recipe — integration recipes mined from real repos (entire-graph)
 
 Usage:
-  node engine/cli.mjs generate "<end goal>" [--package P] [--repos a,b]  Discover + mine + derive (add --json)
+  node engine/cli.mjs generate "<end goal>" [--package P] [--repos a,b]  Discover + mine + derive locally (add --json)
+  node engine/cli.mjs ingest   "<end goal>" [--package P] [--max-repos N]  Land raw edges in Databricks (scale path)
   node engine/cli.mjs query "<goal>"                   Search the mined corpus (instant)
   node engine/cli.mjs mine <library>                   Re-mine an authored library spec
   node engine/cli.mjs list                             List mined recipes`);

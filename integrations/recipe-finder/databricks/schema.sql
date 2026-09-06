@@ -27,16 +27,36 @@ CREATE TABLE IF NOT EXISTS workspace.recipe.recipes (
 --   SELECT id, repos_mined, call_sites FROM workspace.recipe.recipes ORDER BY call_sites DESC;
 
 -- ---------------------------------------------------------------------------
--- Scale path (not required for the app): land raw entire-graph edges here and
--- aggregate recipes in SQL instead of JS, across thousands of repos.
+-- Scale path (the Databricks compute story): land raw entire-graph edges here,
+-- one row per relation across MANY repos, and aggregate the recipe in Spark SQL
+-- (databricks/derive.sql) instead of in the Node process. This is what lets a
+-- goal be mined from 10+ repos — the parse is fanned out at ingest and the
+-- heavy cross-repo ranking runs on the warehouse.
 --
--- CREATE TABLE IF NOT EXISTS workspace.recipe.code_edges (
---   goal STRING, repo STRING, relation STRING, symbol STRING,
---   module STRING, file STRING, line INT, confidence DOUBLE
--- ) USING DELTA;
---
--- Install packages by frequency:
---   SELECT module, count(DISTINCT repo) AS repos
+-- engine/ingest-databricks.mjs writes these rows; lib/corpus.ts::deriveRecipe()
+-- and databricks/derive.sql read them.
+CREATE TABLE IF NOT EXISTS workspace.recipe.code_edges (
+  goal      STRING,          -- recipe slug the edge was mined for (partition key)
+  repo      STRING,          -- short repo name, e.g. "novel"
+  repo_url  STRING,          -- clone URL, used to build receipt links
+  relation  STRING,          -- 'IMPORTS' | 'CALLS' | 'CONSTRUCTS'
+  module    STRING,          -- IMPORTS: raw imported module (e.g. "@tiptap/react"); else NULL
+  base_pkg  STRING,          -- IMPORTS: installable package (e.g. "@tiptap/react" -> family base); else NULL
+  symbol    STRING,          -- CALLS/CONSTRUCTS: called/constructed identifier; else NULL
+  file      STRING,          -- source file the edge was observed in
+  line      INT,             -- 1-based line of the evidence
+  snippet   STRING,          -- trimmed source line at file:line (drives the step `code`)
+  mined_at  TIMESTAMP
+)
+USING DELTA
+PARTITIONED BY (goal);
+
+-- Sanity queries once ingest has run for a goal:
+--   SELECT count(DISTINCT repo) FROM workspace.recipe.code_edges WHERE goal = 'realtime-collaborative-editor';
+--   SELECT base_pkg, count(DISTINCT repo) AS repos
 --   FROM workspace.recipe.code_edges
---   WHERE relation = 'IMPORTS' AND goal = :goal
---   GROUP BY module ORDER BY repos DESC;
+--   WHERE relation = 'IMPORTS' AND goal = 'realtime-collaborative-editor'
+--   GROUP BY base_pkg ORDER BY repos DESC;
+--
+-- The full recipe derivation (install packages + co-located API symbols +
+-- receipts) lives in databricks/derive.sql.

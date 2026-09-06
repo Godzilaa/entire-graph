@@ -8,8 +8,25 @@ and new goals mined on-demand are written back so the corpus grows.
 GET /api/recipe?q=…
   1. Databricks SQL  → workspace.recipe.recipes        (read)
   2. local corpus    → lib/recipes.generated.json      (fallback)
-  3. live-generate   → entire-graph, then WRITE BACK    (miss + ?live=1)
+  3. live (miss + ?live=1):
+       a. ingest      → parse ~10 repos → workspace.recipe.code_edges  (raw edges)
+       b. derive      → aggregate the recipe in Spark SQL on the warehouse
+       c. cache       → write the result back into workspace.recipe.recipes
 ```
+
+## Two tables, two jobs
+
+| table         | holds                              | written by                     | read by                          |
+|---------------|------------------------------------|--------------------------------|----------------------------------|
+| `recipes`     | finished, served playbooks         | `load-databricks.mjs`, write-back | `queryRecipe()` (fast serve)     |
+| `code_edges`  | one row per raw entire-graph edge  | `ingest-databricks.mjs`        | `deriveRecipe()` / `derive.sql`  |
+
+`recipes` is the serving layer (step 1). `code_edges` is the **scale path**: the
+per-repo parse is fanned out at ingest, and the heavy cross-repo ranking
+(install packages, co-located API symbols, receipts) runs in SQL on the
+warehouse via [`derive.sql`](./derive.sql) — not in the Node process. That is
+what lets a goal be mined from 10+ repos instead of the 3 the in-process engine
+handles. Bump the fan-out with `--max-repos N` (or `MAX_REPOS` in `.env.local`).
 
 ## Setup
 
@@ -27,15 +44,35 @@ GET /api/recipe?q=…
    DATABRICKS_SCHEMA=recipe
    ```
 
-3. **Schema** — run [`schema.sql`](./schema.sql) (creates `workspace.recipe.recipes`).
+3. **Schema** — run [`schema.sql`](./schema.sql) (creates both
+   `workspace.recipe.recipes` and `workspace.recipe.code_edges`).
 
-4. **Load the corpus**:
+4. **Load the seed corpus**:
 
    ```bash
    node engine/load-databricks.mjs
    ```
 
 That's it — `GET /api/recipe?q=…` now returns `"source":"databricks"`.
+
+## Mining a new goal on Databricks compute (the scale path)
+
+For a goal not yet in the corpus, land its edges then aggregate in SQL:
+
+```bash
+# parse ~10 discovered repos and land raw edges into code_edges
+node engine/ingest-databricks.mjs "realtime collaborative editor" --max-repos 10
+# (optional) inspect the SQL derivation by hand in a SQL editor / Genie:
+#   run databricks/derive.sql with :goal = 'realtime-collaborative-editor'
+```
+
+The web API does both automatically on `GET /api/recipe?q=…&live=1`: it runs the
+ingest, calls `deriveRecipe()` (the same SQL as `derive.sql`), caches the result
+into `recipes`, and responds with `"source":"databricks-spark"`.
+
+> Note: the `entire graph` binary (tree-sitter parse) runs at **ingest** — the
+> warehouse can't execute it. Databricks scales the *aggregation* across many
+> repos; ingest scales the *parse* by simply pointing it at more repos.
 
 ## How it connects (no SDK)
 
