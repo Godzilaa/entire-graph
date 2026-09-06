@@ -1,0 +1,502 @@
+[
+  {
+    "id": "tiptap-collab-editor",
+    "library": "tiptap",
+    "title": "A collaborative rich-text",
+    "emphasis": "editor",
+    "reposMined": 3,
+    "callSites": 31,
+    "runnersUp": "Lexical, Slate, ProseMirror",
+    "keywords": [
+      "editor",
+      "rich text",
+      "rich-text",
+      "collaborative",
+      "collab",
+      "google docs",
+      "docs",
+      "wysiwyg",
+      "tiptap",
+      "prosemirror",
+      "comments",
+      "writing"
+    ],
+    "steps": [
+      {
+        "name": "Install",
+        "freq": "3/3",
+        "level": "high",
+        "code": "npm i @tiptap/react @tiptap/core @tiptap/starter-kit @tiptap/pm y-websocket yjs y-prosemirror",
+        "note": "Packages the mined repos actually import together (not just declare).  Most common: @tiptap/react (2/3), @tiptap/core (2/3), @tiptap/starter-kit (2/3).",
+        "receipts": [
+          {
+            "label": "novel/packages/headless/src/components/editor-bubble-item.tsx",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/components/editor-bubble-item.tsx"
+          },
+          {
+            "label": "novel/packages/headless/src/components/editor-bubble.tsx",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/components/editor-bubble.tsx"
+          },
+          {
+            "label": "novel/packages/headless/src/components/editor-command-item.tsx",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/components/editor-command-item.tsx"
+          },
+          {
+            "label": "novel/packages/headless/src/components/editor-command.tsx",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/components/editor-command.tsx"
+          }
+        ]
+      },
+      {
+        "name": "Core editor setup",
+        "freq": "2/3",
+        "level": "high",
+        "code": "const editor = useEditor({\n  extensions: [StarterKit, /* … */],\n})",
+        "note": "The dominant wiring: useEditor / new Editor with StarterKit + extensions.",
+        "receipts": [
+          {
+            "label": "novel/apps/web/components/tailwind/generative/ai-completion-command.tsx:5",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/apps/web/components/tailwind/generative/ai-completion-command.tsx#L5"
+          },
+          {
+            "label": "novel/apps/web/components/tailwind/generative/ai-selector-commands.tsx:32",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/apps/web/components/tailwind/generative/ai-selector-commands.tsx#L32"
+          },
+          {
+            "label": "novel/apps/web/components/tailwind/generative/ai-selector.tsx:25",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/apps/web/components/tailwind/generative/ai-selector.tsx#L25"
+          },
+          {
+            "label": "novel/apps/web/components/tailwind/generative/generative-menu-switch.tsx:12",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/apps/web/components/tailwind/generative/generative-menu-switch.tsx#L12"
+          },
+          {
+            "label": "novel/apps/web/components/tailwind/selectors/color-selector.tsx:94",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/apps/web/components/tailwind/selectors/color-selector.tsx#L94"
+          }
+        ]
+      },
+      {
+        "name": "Realtime collaboration provider",
+        "freq": "1/3",
+        "level": "warn",
+        "code": "const ydoc = new Y.Doc()\nnew WebsocketProvider(WS_URL, room, ydoc)",
+        "note": "Realtime layer paired with the editor: a Yjs doc + a websocket provider.",
+        "receipts": [
+          {
+            "label": "yjs-demos/monaco-react/src/App.tsx:10",
+            "url": "https://github.com/yjs/yjs-demos/blob/HEAD/monaco-react/src/App.tsx#L10"
+          }
+        ]
+      },
+      {
+        "name": "Inline comments",
+        "freq": "2/3",
+        "level": "high",
+        "code": "Mark.create({ name: 'comment', /* addAttributes… */ })",
+        "note": "Less standardized — repos hand-roll a custom Mark for comments.",
+        "receipts": [
+          {
+            "label": "novel/packages/headless/src/extensions/ai-highlight.ts:29",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/extensions/ai-highlight.ts#L29"
+          },
+          {
+            "label": "novel/packages/headless/src/extensions/ai-highlight.ts:65",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/extensions/ai-highlight.ts#L65"
+          },
+          {
+            "label": "novel/packages/headless/src/extensions/mathematics.ts:47",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/extensions/mathematics.ts#L47"
+          },
+          {
+            "label": "novel/packages/headless/src/extensions/mathematics.ts:134",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/extensions/mathematics.ts#L134"
+          },
+          {
+            "label": "novel/packages/headless/src/extensions/twitter.tsx:75",
+            "url": "https://github.com/steven-tey/novel/blob/HEAD/packages/headless/src/extensions/twitter.tsx#L75"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "drag-and-drop-kanban-board",
+    "library": "lucide-react",
+    "title": "Drag and drop kanban board",
+    "emphasis": "",
+    "reposMined": 4,
+    "callSites": 11,
+    "runnersUp": "@tailwindcss/vite, uuid, node:child_process",
+    "keywords": [
+      "drag and drop kanban board",
+      "drag",
+      "and",
+      "drop",
+      "kanban",
+      "board"
+    ],
+    "steps": [
+      {
+        "name": "Install",
+        "freq": "2/4",
+        "level": "high",
+        "code": "npm i lucide-react",
+        "note": "Packages the discovered repos import together. Most common: lucide-react (2/4).",
+        "receipts": [
+          {
+            "label": "ai-agent-board/packages/client/src/App.tsx",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/packages/client/src/App.tsx"
+          }
+        ]
+      },
+      {
+        "name": "Context",
+        "freq": "1/4",
+        "level": "warn",
+        "code": "## Context (draft, approve, edit, skip, post, delete actions)",
+        "note": "A lucide-react API used across 1/4 discovered repos.",
+        "receipts": [
+          {
+            "label": "ai-agent-board/.squad/templates/skills/external-comms/SKILL.md:218",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/.squad/templates/skills/external-comms/SKILL.md#L218"
+          }
+        ]
+      },
+      {
+        "name": "Priority",
+        "freq": "1/4",
+        "level": "warn",
+        "code": "### 🔴 HIGH Priority (Invoke Immediately)",
+        "note": "A lucide-react API used across 1/4 discovered repos.",
+        "receipts": [
+          {
+            "label": "ai-agent-board/.squad/templates/skills/reflect/SKILL.md:36",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/.squad/templates/skills/reflect/SKILL.md#L36"
+          },
+          {
+            "label": "ai-agent-board/.squad/templates/skills/reflect/SKILL.md:44",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/.squad/templates/skills/reflect/SKILL.md#L44"
+          },
+          {
+            "label": "ai-agent-board/.squad/templates/skills/reflect/SKILL.md:52",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/.squad/templates/skills/reflect/SKILL.md#L52"
+          }
+        ]
+      },
+      {
+        "name": "Request",
+        "freq": "1/4",
+        "level": "warn",
+        "code": "def _request(method: str, path: str, body: dict[str, Any] | None = None, idempotency_key: str | None = None) -> Any:",
+        "note": "A lucide-react API used across 1/4 discovered repos.",
+        "receipts": [
+          {
+            "label": "ai-agent-board/integrations/hermes-agent-board/__init__.py:37",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/integrations/hermes-agent-board/__init__.py#L37"
+          }
+        ]
+      },
+      {
+        "name": "Path",
+        "freq": "1/4",
+        "level": "warn",
+        "code": "def register(ctx) -> None:",
+        "note": "A lucide-react API used across 1/4 discovered repos.",
+        "receipts": [
+          {
+            "label": "ai-agent-board/integrations/hermes-agent-board/__init__.py:218",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/integrations/hermes-agent-board/__init__.py#L218"
+          },
+          {
+            "label": "ai-agent-board/integrations/hermes-agent-board/install.py:21",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/integrations/hermes-agent-board/install.py#L21"
+          },
+          {
+            "label": "ai-agent-board/integrations/hermes-agent-board/tests/test_plugin.py:67",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/integrations/hermes-agent-board/tests/test_plugin.py#L67"
+          },
+          {
+            "label": "ai-agent-board/integrations/hermes-agent-board/tests/test_plugin.py:152",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/integrations/hermes-agent-board/tests/test_plugin.py#L152"
+          }
+        ]
+      },
+      {
+        "name": "ArgumentParser",
+        "freq": "1/4",
+        "level": "warn",
+        "code": "def main() -> int:",
+        "note": "A lucide-react API used across 1/4 discovered repos.",
+        "receipts": [
+          {
+            "label": "ai-agent-board/integrations/hermes-agent-board/install.py:21",
+            "url": "https://github.com/DanWahlin/ai-agent-board/blob/HEAD/integrations/hermes-agent-board/install.py#L21"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      "https://github.com/DanWahlin/ai-agent-board",
+      "https://github.com/CodeWithGionatha-Labs/dnd-kanban-board",
+      "https://github.com/Jalalx/drag",
+      "https://github.com/9bzero/kanban-board"
+    ]
+  },
+  {
+    "id": "kanban-board",
+    "library": "@dnd-kit/core",
+    "title": "Kanban board",
+    "emphasis": "",
+    "reposMined": 2,
+    "callSites": 1,
+    "runnersUp": "@chakra-ui/icons, @chakra-ui/react, react-dnd",
+    "keywords": [
+      "kanban board",
+      "kanban",
+      "board"
+    ],
+    "steps": [
+      {
+        "name": "Install",
+        "freq": "1/2",
+        "level": "high",
+        "code": "npm i @dnd-kit/core",
+        "note": "Packages the mined repos import together.",
+        "receipts": []
+      }
+    ],
+    "sources": [
+      "https://github.com/CodeWithGionatha-Labs/dnd-kanban-board",
+      "https://github.com/9bzero/kanban-board"
+    ]
+  },
+  {
+    "id": "react-drag-and-drop-kanban",
+    "library": "@dnd-kit/sortable",
+    "title": "React drag and drop kanban",
+    "emphasis": "",
+    "reposMined": 1,
+    "callSites": 6,
+    "runnersUp": "@vitejs/plugin-react-swc",
+    "keywords": [
+      "react drag and drop kanban",
+      "react",
+      "drag",
+      "and",
+      "drop",
+      "kanban"
+    ],
+    "steps": [
+      {
+        "name": "Install",
+        "freq": "1/1",
+        "level": "high",
+        "code": "npm i @dnd-kit/sortable @dnd-kit/utilities",
+        "note": "Packages the mined repos import together. Most common: @dnd-kit/sortable (1/1), @dnd-kit/utilities (1/1).",
+        "receipts": [
+          {
+            "label": "react-kanban/src/components/ColumnContainer.tsx",
+            "url": "https://github.com/indraarianggi/react-kanban/blob/HEAD/src/components/ColumnContainer.tsx"
+          },
+          {
+            "label": "react-kanban/src/components/ColumnContainer.tsx",
+            "url": "https://github.com/indraarianggi/react-kanban/blob/HEAD/src/components/ColumnContainer.tsx"
+          }
+        ]
+      },
+      {
+        "name": "useSortable",
+        "freq": "1/1",
+        "level": "high",
+        "code": "function ColumnContainer({",
+        "note": "A @dnd-kit/sortable API used across 1/1 mined repos.",
+        "receipts": [
+          {
+            "label": "react-kanban/src/components/ColumnContainer.tsx:20",
+            "url": "https://github.com/indraarianggi/react-kanban/blob/HEAD/src/components/ColumnContainer.tsx#L20"
+          },
+          {
+            "label": "react-kanban/src/components/TaskCard.tsx:14",
+            "url": "https://github.com/indraarianggi/react-kanban/blob/HEAD/src/components/TaskCard.tsx#L14"
+          }
+        ]
+      },
+      {
+        "name": "useSensor",
+        "freq": "1/1",
+        "level": "high",
+        "code": "function KanbanBoard() {",
+        "note": "A @dnd-kit/sortable API used across 1/1 mined repos.",
+        "receipts": [
+          {
+            "label": "react-kanban/src/components/KanbanBoard.tsx:20",
+            "url": "https://github.com/indraarianggi/react-kanban/blob/HEAD/src/components/KanbanBoard.tsx#L20"
+          }
+        ]
+      },
+      {
+        "name": "useSensors",
+        "freq": "1/1",
+        "level": "high",
+        "code": "function KanbanBoard() {",
+        "note": "A @dnd-kit/sortable API used across 1/1 mined repos.",
+        "receipts": [
+          {
+            "label": "react-kanban/src/components/KanbanBoard.tsx:20",
+            "url": "https://github.com/indraarianggi/react-kanban/blob/HEAD/src/components/KanbanBoard.tsx#L20"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      "https://github.com/indraarianggi/react-kanban"
+    ]
+  },
+  {
+    "id": "roulette",
+    "library": "@/components",
+    "title": "Roulette",
+    "emphasis": "",
+    "reposMined": 3,
+    "callSites": 66,
+    "runnersUp": "path, socket.io-client, dns",
+    "keywords": [
+      "roulette",
+      "roulette"
+    ],
+    "steps": [
+      {
+        "name": "Install",
+        "freq": "2/3",
+        "level": "high",
+        "code": "npm i @/components @/hooks @/config @/redis @/context @/layout @heroui/react @/providers @/util @dnd-kit/core @solana/wallet-adapter-react @solana/wallet-adapter-react-ui @solana/wallet-adapter-base @solana/web3.js @pmmmwh/react-refresh-webpack-plugin @testing-library/jest-dom @testing-library/react @testing-library/user-event @eslint/js @tanstack/react-query @/lib @repo/common @radix-ui/react-accordion @radix-ui/react-alert-dialog @radix-ui/react-aspect-ratio @radix-ui/react-avatar @radix-ui/react-checkbox @radix-ui/react-collapsible @radix-ui/react-dialog @radix-ui/react-context-menu @radix-ui/react-dropdown-menu @radix-ui/react-label @radix-ui/react-hover-card @radix-ui/react-menubar @radix-ui/react-navigation-menu @radix-ui/react-popover @radix-ui/react-progress @radix-ui/react-radio-group @radix-ui/react-scroll-area @radix-ui/react-select @radix-ui/react-separator @radix-ui/react-slider @radix-ui/react-switch @radix-ui/react-tabs @radix-ui/react-toast @radix-ui/react-toggle-group @radix-ui/react-toggle @radix-ui/react-tooltip @vitejs/plugin-react-swc @next/eslint-plugin-next @repo/eslint-config @turbo/gen",
+        "note": "Packages the mined repos import together. Most common: @/components (2/3), @/hooks (2/3), @/config (1/3).",
+        "receipts": [
+          {
+            "label": "web3-casino/src/app/crash/page.tsx",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/crash/page.tsx"
+          },
+          {
+            "label": "web3-casino/src/app/crash/page.tsx",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/crash/page.tsx"
+          },
+          {
+            "label": "web3-casino/src/app/api/games/[game]/route.ts",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/api/games/[game]/route.ts"
+          },
+          {
+            "label": "web3-casino/src/app/api/games/[game]/route.ts",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/api/games/[game]/route.ts"
+          }
+        ]
+      },
+      {
+        "name": "useIsMobile",
+        "freq": "2/3",
+        "level": "high",
+        "code": "const CrashGame = () => {",
+        "note": "A @/components API used across 2/3 mined repos.",
+        "receipts": [
+          {
+            "label": "web3-casino/src/app/crash/page.tsx:57",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/crash/page.tsx#L57"
+          },
+          {
+            "label": "web3-casino/src/app/mine/page.tsx:77",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/mine/page.tsx#L77"
+          },
+          {
+            "label": "web3-casino/src/app/slide/page.tsx:66",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/slide/page.tsx#L66"
+          },
+          {
+            "label": "web3-casino/src/app/videopoker/page.tsx:57",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/videopoker/page.tsx#L57"
+          }
+        ]
+      },
+      {
+        "name": "useSocket",
+        "freq": "2/3",
+        "level": "high",
+        "code": "const CrashGame = () => {",
+        "note": "A @/components API used across 2/3 mined repos.",
+        "receipts": [
+          {
+            "label": "web3-casino/src/app/crash/page.tsx:57",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/crash/page.tsx#L57"
+          },
+          {
+            "label": "roulette/apps/frontend/src/components/RouletteTable.tsx:13",
+            "url": "https://github.com/hkirat/roulette/blob/HEAD/apps/frontend/src/components/RouletteTable.tsx#L13"
+          },
+          {
+            "label": "roulette/apps/frontend/src/pages/Admin.tsx:22",
+            "url": "https://github.com/hkirat/roulette/blob/HEAD/apps/frontend/src/pages/Admin.tsx#L22"
+          }
+        ]
+      },
+      {
+        "name": "useAudio",
+        "freq": "2/3",
+        "level": "high",
+        "code": "const SlideGame = () => {",
+        "note": "A @/components API used across 2/3 mined repos.",
+        "receipts": [
+          {
+            "label": "web3-casino/src/app/slide/page.tsx:66",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/slide/page.tsx#L66"
+          },
+          {
+            "label": "react-roulette-pro/src/hooks/useAudio/useAudio.test.tsx:11",
+            "url": "https://github.com/IvanAdmaers/react-roulette-pro/blob/HEAD/src/hooks/useAudio/useAudio.test.tsx#L11"
+          },
+          {
+            "label": "react-roulette-pro/src/hooks/useAudio/useAudio.test.tsx:23",
+            "url": "https://github.com/IvanAdmaers/react-roulette-pro/blob/HEAD/src/hooks/useAudio/useAudio.test.tsx#L23"
+          },
+          {
+            "label": "react-roulette-pro/src/hooks/useAudio/useAudio.test.tsx:50",
+            "url": "https://github.com/IvanAdmaers/react-roulette-pro/blob/HEAD/src/hooks/useAudio/useAudio.test.tsx#L50"
+          }
+        ]
+      },
+      {
+        "name": "GET",
+        "freq": "1/3",
+        "level": "warn",
+        "code": "export async function GET(",
+        "note": "A @/components API used across 1/3 mined repos.",
+        "receipts": [
+          {
+            "label": "web3-casino/src/app/api/games/[game]/route.ts:8",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/api/games/[game]/route.ts#L8"
+          },
+          {
+            "label": "web3-casino/src/app/api/health/route.ts:6",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/app/api/health/route.ts#L6"
+          }
+        ]
+      },
+      {
+        "name": "useDroppable",
+        "freq": "1/3",
+        "level": "warn",
+        "code": "function Droppable(props: any) {",
+        "note": "A @/components API used across 1/3 mined repos.",
+        "receipts": [
+          {
+            "label": "web3-casino/src/components/Board/placeArea.tsx:5",
+            "url": "https://github.com/nkosresearch/web3-casino/blob/HEAD/src/components/Board/placeArea.tsx#L5"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      "https://github.com/nkosresearch/web3-casino",
+      "https://github.com/IvanAdmaers/react-roulette-pro",
+      "https://github.com/hkirat/roulette"
+    ]
+  }
+]

@@ -7,3 +7,9 @@ __pycache__/
 /bench/.cache/
 # Per-run benchmark reports are local-only working data, not version-controlled.
 /bench/results/
+
+# recipe-finder integration
+integrations/recipe-finder/.env.local
+integrations/recipe-finder/node_modules/
+integrations/recipe-finder/.next/
+integrations/recipe-finder/engine/.cache/
